@@ -1,0 +1,13 @@
+{
+  "name": "tienda-productos-belleza",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Élégance — Tienda de belleza premium",
+  "scripts": {
+    "dev": "serve dist -l 8080",
+    "start": "serve dist -l 8080"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

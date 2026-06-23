@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Élégance — Belleza Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+
+  <body>
+    <nav class="nav nav--left js-nav">
+      <ul>
+        <li>
+          <a href="#"><span>Maquillaje</span></a>
+        </li>
+        <li>
+          <a href="#"><span>Skincare</span></a>
+        </li>
+        <li>
+          <a href="#" class="is-active"><span>Colecciones</span></a>
+        </li>
+      </ul>
+    </nav>
+
+    <figure class="logo">
+      <span class="logo__brand">Élégance</span>
+      <span class="logo__tagline">Belleza Premium</span>
+    </figure>
+
+    <nav class="nav nav--right">
+      <ul>
+        <li>
+          <a href="#"><span>Contacto</span></a>
+        </li>
+        <li>
+          <a href="#" class="js-cart-toggle">
+            <span>Carrito</span>
+            <div class="cart-total js-cart-count">0</div>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="slider js-slider">
+      <div class="slider__inner js-slider__inner"></div>
+
+      <div class="slide js-slide">
+        <div class="slide__content">
+          <figure class="slide__img js-slide__img">
+            <img src="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Maquillaje premium">
+          </figure>
+          <figure class="slide__img js-slide__img">
+            <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Productos de belleza">
+          </figure>
+        </div>
+
+        <div class="slider__text js-slider__text">
+          <div class="slider__text-line js-slider__text-line"><div>Productos de</div></div>
+          <div class="slider__text-line js-slider__text-line"><div>belleza y <em>Nutrición.</em></div></div>
+          <div class="slider__text-line js-slider__text-line"><div>Cuidado integral</div></div>
+          <div class="slider__text-line js-slider__text-line"><div>para <em>ti.</em></div></div>
+        </div>
+      </div>
+
+      <div class="slide js-slide">
+        <div class="slide__content">
+          <figure class="slide__img js-slide__img">
+            <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Cuidado de la piel">
+          </figure>
+          <figure class="slide__img js-slide__img">
+            <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Serum facial">
+          </figure>
+        </div>
+
+        <div class="slider__text js-slider__text">
+          <div class="slider__text-line js-slider__text-line"><div>Capacitación y</div></div>
+          <div class="slider__text-line js-slider__text-line"><div><em>Ventas.</em> Impulsa</div></div>
+          <div class="slider__text-line js-slider__text-line"><div>tu camino hacia</div></div>
+          <div class="slider__text-line js-slider__text-line"><div>el <em>éxito.</em></div></div>
+        </div>
+      </div>
+
+      <div class="slide js-slide">
+        <div class="slide__content slide__content--grid">
+          <div class="store-showcase js-store-showcase">
+            <h2 class="store-title js-store-title">Tienda</h2>
+            <div class="store-grid">
+            <figure class="store-grid__item js-slide__img js-product" data-id="p1" data-name="Paleta Maquillaje" data-price="24990" data-image="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Paleta Maquillaje">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Paleta Maquillaje</span>
+                <span class="store-grid__price">$24.990</span>
+              </figcaption>
+            </figure>
+            <figure class="store-grid__item js-slide__img js-product" data-id="p2" data-name="Serum Facial" data-price="18500" data-image="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Serum Facial">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Serum Facial</span>
+                <span class="store-grid__price">$18.500</span>
+              </figcaption>
+            </figure>
+            <figure class="store-grid__item js-slide__img js-product" data-id="p3" data-name="Crema Hidratante" data-price="12990" data-image="https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Crema Hidratante">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Crema Hidratante</span>
+                <span class="store-grid__price">$12.990</span>
+              </figcaption>
+            </figure>
+            <figure class="store-grid__item js-slide__img js-product" data-id="p4" data-name="Labial Premium" data-price="9990" data-image="https://images.unsplash.com/photo-1595475207225-428b62bda831?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1595475207225-428b62bda831?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Labial Premium">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Labial Premium</span>
+                <span class="store-grid__price">$9.990</span>
+              </figcaption>
+            </figure>
+            <figure class="store-grid__item js-slide__img js-product" data-id="p5" data-name="Protector Solar" data-price="15500" data-image="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Protector Solar">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Protector Solar</span>
+                <span class="store-grid__price">$15.500</span>
+              </figcaption>
+            </figure>
+            <figure class="store-grid__item js-slide__img js-product" data-id="p6" data-name="Mascarilla Facial" data-price="8990" data-image="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Mascarilla Facial">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Mascarilla Facial</span>
+                <span class="store-grid__price">$8.990</span>
+              </figcaption>
+            </figure>
+            <figure class="store-grid__item js-slide__img js-product" data-id="p7" data-name="Esmalte Premium" data-price="6990" data-image="https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Esmalte Premium">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Esmalte Premium</span>
+                <span class="store-grid__price">$6.990</span>
+              </figcaption>
+            </figure>
+            <figure class="store-grid__item js-slide__img js-product" data-id="p8" data-name="Kit Nutricional" data-price="32990" data-image="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
+              <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Kit Nutricional">
+              <figcaption class="store-grid__caption">
+                <span class="store-grid__name">Kit Nutricional</span>
+                <span class="store-grid__price">$32.990</span>
+              </figcaption>
+            </figure>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="slider__nav js-slider__nav">
+        <div class="slider-bullet js-slider-bullet">
+          <span class="slider-bullet__text js-slider-bullet__text">01</span>
+          <span class="slider-bullet__line js-slider-bullet__line"></span>
+        </div>
+        <div class="slider-bullet js-slider-bullet">
+          <span class="slider-bullet__text js-slider-bullet__text">02</span>
+          <span class="slider-bullet__line js-slider-bullet__line"></span>
+        </div>
+        <div class="slider-bullet js-slider-bullet">
+          <span class="slider-bullet__text js-slider-bullet__text">03</span>
+          <span class="slider-bullet__line js-slider-bullet__line"></span>
+        </div>
+      </nav>
+
+      <div class="scroll js-scroll">Deslizar</div>
+    </div>
+
+    <div class="vert-text">
+      <span>
+        Élégance<br>
+        Colección Bordó
+      </span>
+    </div>
+
+    <div class="cart-overlay js-cart-overlay" aria-hidden="true">
+      <aside class="cart-panel js-cart-panel" role="dialog" aria-label="Carrito de compras">
+        <header class="cart-panel__header">
+          <h2 class="cart-panel__title">Carrito</h2>
+          <button type="button" class="cart-panel__close js-cart-close" aria-label="Cerrar carrito">&times;</button>
+        </header>
+        <ul class="cart-panel__items js-cart-items"></ul>
+        <p class="cart-panel__empty js-cart-empty">Tu carrito está vacío</p>
+        <footer class="cart-panel__footer">
+          <div class="cart-panel__total">
+            <span>Total</span>
+            <span class="js-cart-total-price">$0</span>
+          </div>
+          <button type="button" class="cart-panel__checkout js-cart-checkout">Finalizar compra</button>
+          <button type="button" class="cart-panel__clear js-cart-clear">Vaciar carrito</button>
+        </footer>
+      </aside>
+    </div>
+
+    <div class="cart-toast js-cart-toast" aria-live="polite"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/99/three.min.js"></script>
+    <script src="./script.js"></script>
+  </body>
+
+</html>
