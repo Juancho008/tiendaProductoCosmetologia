@@ -8,5 +8,5 @@
 //       apiBase: "https://elegance-estetica.TU-SUBDOMINIO.workers.dev"
 //     (sin barra final).
 window.ELEGANCE_CONFIG = {
-  apiBase: ""
+  apiBase: "https://elegance-estetica.juanignacioespindola08.workers.dev"
 };
