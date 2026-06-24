@@ -1,10 +1,17 @@
 # Dependencias
 node_modules/
 
+# Datos persistidos en el servidor (catálogo e imágenes subidas)
+data/
+
 # Variables de entorno y secretos
 .env
 .env.*
 !.env.example
+.dev.vars
+
+# Cloudflare / wrangler
+.wrangler/
 
 # Logs
 logs/

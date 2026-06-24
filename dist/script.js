@@ -61,13 +61,6 @@ class Cart {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.close()
     })
-
-    document.querySelectorAll('.js-product').forEach((product) => {
-      product.addEventListener('click', (e) => {
-        e.stopPropagation()
-        this.addFromProduct(product)
-      })
-    })
   }
 
   addFromProduct(el) {
@@ -710,22 +703,21 @@ class Slider {
 
   onTouchStart(e) {
     this.touchStartY = e.touches[0].clientY
-    this.touchInStore = !!e.target.closest('.slide__content--grid')
+    this.touchStartX = e.touches[0].clientX
+    this.touchInStoreGrid = !!e.target.closest('.js-carousel')
   }
 
   onTouchEnd(e) {
     if (this.state.animating) return
 
     const deltaY = this.touchStartY - e.changedTouches[0].clientY
-    if (Math.abs(deltaY) < 45) return
+    const deltaX = this.touchStartX - e.changedTouches[0].clientX
 
-    if (this.touchInStore && this.data.current === this.data.total) {
-      const grid = this.el.querySelector('.slide__content--grid')
-      if (grid && grid.scrollHeight > grid.clientHeight + 1) {
-        if (deltaY < 0 && grid.scrollTop > 0) return
-        if (deltaY > 0 && grid.scrollTop < grid.scrollHeight - grid.clientHeight - 5) return
-      }
+    if (this.touchInStoreGrid && this.data.current === this.data.total) {
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 20) return
     }
+
+    if (Math.abs(deltaY) < 45) return
 
     if (deltaY > 0) {
       if (this.data.current >= this.data.total) return
@@ -782,6 +774,322 @@ class Slider {
   }
 }
 
+class ProductCarousel {
+  constructor(root) {
+    this.root = root
+    this.viewport = root.querySelector('.js-carousel-viewport')
+    this.track = root.querySelector('.js-carousel-track')
+    this.items = [...this.track.querySelectorAll('.store-grid__item')]
+    this.prevBtn = root.querySelector('.js-carousel-prev')
+    this.nextBtn = root.querySelector('.js-carousel-next')
+    this.dotsEl = root.querySelector('.js-carousel-dots')
+    this.slide = root.closest('.js-slide')
+
+    this.page = 0
+    this.perView = this.getPerView()
+    this.autoplayDelay = 5000
+    this.autoplayTimer = null
+    this.swipe = { x: 0, y: 0, active: false }
+
+    this.bind()
+    this.build()
+    this.startAutoplay()
+  }
+
+  getPerView() {
+    return window.innerWidth <= 768 ? 2 : 4
+  }
+
+  get itemsPerPage() {
+    return this.perView * 2
+  }
+
+  get pageCount() {
+    return Math.max(1, Math.ceil(this.items.length / this.itemsPerPage))
+  }
+
+  build() {
+    this.root.style.setProperty('--per-view', this.perView)
+    this.buildDots()
+    this.update(false)
+  }
+
+  buildDots() {
+    this.dotsEl.innerHTML = ''
+    this.dots = []
+    for (let i = 0; i < this.pageCount; i += 1) {
+      const dot = document.createElement('button')
+      dot.type = 'button'
+      dot.className = 'carousel__dot'
+      dot.setAttribute('role', 'tab')
+      dot.setAttribute('aria-label', 'Página ' + (i + 1))
+      dot.addEventListener('click', () => this.goTo(i, true))
+      this.dotsEl.appendChild(dot)
+      this.dots.push(dot)
+    }
+  }
+
+  update(animate = true) {
+    const gap = parseFloat(getComputedStyle(this.track).columnGap) || 0
+    const width = this.viewport.clientWidth
+    const offset = this.page * (width + gap)
+
+    this.track.style.transition = animate
+      ? ''
+      : 'none'
+    this.track.style.transform = 'translateX(' + -offset + 'px)'
+
+    if (!animate) {
+      void this.track.offsetWidth
+      this.track.style.transition = ''
+    }
+
+    this.dots.forEach((dot, i) => {
+      dot.classList.toggle('is-active', i === this.page)
+    })
+
+    this.animateItems()
+  }
+
+  animateItems() {
+    if (!window.TweenMax) return
+
+    const start = this.page * this.itemsPerPage
+    const visibleItems = this.items.slice(start, start + this.itemsPerPage)
+    if (!visibleItems.length) return
+
+    TweenMax.killTweensOf(visibleItems)
+    TweenMax.staggerFromTo(visibleItems, 0.7, {
+      autoAlpha: 0.25,
+      y: 28,
+      scale: 0.93
+    }, {
+      autoAlpha: 1,
+      y: 0,
+      scale: 1,
+      ease: Power3.easeOut,
+      delay: 0.1,
+      clearProps: 'transform,opacity,visibility'
+    }, 0.09)
+  }
+
+  goTo(page, fromUser = false) {
+    const count = this.pageCount
+    this.page = ((page % count) + count) % count
+    this.update(true)
+    if (fromUser) this.restartAutoplay()
+  }
+
+  next(fromUser = false) {
+    this.goTo(this.page + 1, fromUser)
+  }
+
+  prev(fromUser = false) {
+    this.goTo(this.page - 1, fromUser)
+  }
+
+  startAutoplay() {
+    this.stopAutoplay()
+    this.autoplayTimer = setInterval(() => {
+      if (this.slide && getComputedStyle(this.slide).visibility === 'hidden') return
+      this.next(false)
+    }, this.autoplayDelay)
+  }
+
+  stopAutoplay() {
+    if (this.autoplayTimer) {
+      clearInterval(this.autoplayTimer)
+      this.autoplayTimer = null
+    }
+  }
+
+  restartAutoplay() {
+    this.startAutoplay()
+  }
+
+  onResize() {
+    const nextPerView = this.getPerView()
+    if (nextPerView !== this.perView) {
+      this.perView = nextPerView
+      this.root.style.setProperty('--per-view', this.perView)
+      this.page = Math.min(this.page, this.pageCount - 1)
+      this.buildDots()
+    }
+    this.update(false)
+  }
+
+  bind() {
+    this.prevBtn?.addEventListener('click', () => this.prev(true))
+    this.nextBtn?.addEventListener('click', () => this.next(true))
+
+    this.root.addEventListener('mouseenter', () => this.stopAutoplay())
+    this.root.addEventListener('mouseleave', () => this.startAutoplay())
+
+    this.viewport.addEventListener('touchstart', (e) => {
+      this.swipe.x = e.touches[0].clientX
+      this.swipe.y = e.touches[0].clientY
+      this.swipe.active = true
+      this.stopAutoplay()
+    }, { passive: true })
+
+    this.viewport.addEventListener('touchend', (e) => {
+      if (!this.swipe.active) return
+      this.swipe.active = false
+      const dx = e.changedTouches[0].clientX - this.swipe.x
+      const dy = e.changedTouches[0].clientY - this.swipe.y
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) this.next(true)
+        else this.prev(true)
+      } else {
+        this.startAutoplay()
+      }
+    }, { passive: true })
+
+    window.addEventListener('resize', () => this.onResize())
+  }
+}
+
+const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+const ICON_BAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>'
+
+const PLACEHOLDER_IMG =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%231e0a0e"/><text x="50%" y="50%" fill="%23c9a962" font-family="serif" font-size="28" text-anchor="middle" dy=".35em">Élégance</text></svg>'
+  )
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function renderProducts(track, products) {
+  if (!track) return
+  if (!Array.isArray(products) || !products.length) {
+    track.innerHTML = ''
+    return
+  }
+
+  track.innerHTML = products
+    .map((p) => {
+      const image = p.image || PLACEHOLDER_IMG
+      return `
+      <figure class="store-grid__item js-slide__img js-product"
+        data-id="${escapeHtml(p.id)}"
+        data-name="${escapeHtml(p.name)}"
+        data-price="${escapeHtml(p.price)}"
+        data-image="${escapeHtml(image)}"
+        data-description="${escapeHtml(p.description)}">
+        <img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}">
+        <figcaption class="store-grid__caption">
+          <span class="store-grid__name">${escapeHtml(p.name)}</span>
+          <span class="store-grid__price">${formatPrice(Number(p.price))}</span>
+        </figcaption>
+      </figure>`
+    })
+    .join('')
+}
+
+class QuickView {
+  constructor(cart, carousel) {
+    this.cart = cart
+    this.carousel = carousel
+    this.overlay = document.querySelector('.js-quickview-overlay')
+    this.img = document.querySelector('.js-quickview-img')
+    this.nameEl = document.querySelector('.js-quickview-name')
+    this.priceEl = document.querySelector('.js-quickview-price')
+    this.descEl = document.querySelector('.js-quickview-desc')
+    this.addBtn = document.querySelector('.js-quickview-add')
+    this.currentEl = null
+
+    this.setupProducts()
+    this.bind()
+  }
+
+  setupProducts() {
+    document.querySelectorAll('.js-product').forEach((product) => {
+      const actions = document.createElement('div')
+      actions.className = 'product-actions'
+
+      const viewBtn = document.createElement('button')
+      viewBtn.type = 'button'
+      viewBtn.className = 'product-action js-product-view'
+      viewBtn.setAttribute('aria-label', 'Ver detalle de ' + product.dataset.name)
+      viewBtn.innerHTML = ICON_SEARCH
+
+      const addBtn = document.createElement('button')
+      addBtn.type = 'button'
+      addBtn.className = 'product-action js-product-add'
+      addBtn.setAttribute('aria-label', 'Agregar ' + product.dataset.name + ' al carrito')
+      addBtn.innerHTML = ICON_BAG
+
+      actions.appendChild(viewBtn)
+      actions.appendChild(addBtn)
+      product.appendChild(actions)
+
+      viewBtn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        this.open(product)
+      })
+
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        this.cart.addFromProduct(product)
+      })
+
+      product.addEventListener('click', () => this.open(product))
+    })
+  }
+
+  bind() {
+    document.querySelector('.js-quickview-close')?.addEventListener('click', () => this.close())
+
+    this.overlay?.addEventListener('click', (e) => {
+      if (e.target === this.overlay) this.close()
+    })
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.close()
+    })
+
+    this.addBtn?.addEventListener('click', () => {
+      if (this.currentEl) this.cart.addFromProduct(this.currentEl)
+      this.close()
+    })
+  }
+
+  open(el) {
+    if (!this.overlay || !el) return
+    this.currentEl = el
+
+    const { name, price, image, description } = el.dataset
+    const bigImage = (image || '').replace('w=400', 'w=900')
+
+    this.img.src = bigImage || image || PLACEHOLDER_IMG
+    this.img.alt = name || ''
+    this.nameEl.textContent = name || ''
+    this.priceEl.textContent = formatPrice(Number(price))
+    this.descEl.textContent = description || ''
+
+    this.overlay.classList.add('is-open')
+    this.overlay.setAttribute('aria-hidden', 'false')
+    document.body.style.overflow = 'hidden'
+    this.carousel?.stopAutoplay()
+  }
+
+  close() {
+    if (!this.overlay) return
+    this.overlay.classList.remove('is-open')
+    this.overlay.setAttribute('aria-hidden', 'true')
+    document.body.style.overflow = ''
+    this.carousel?.startAutoplay()
+  }
+}
+
 const links = document.querySelectorAll('.js-nav a')
 
 links.forEach((link) => {
@@ -792,5 +1100,29 @@ links.forEach((link) => {
   })
 })
 
-const cart = new Cart()
-const slider = new Slider()
+async function fetchCatalog() {
+  try {
+    const r = await fetch('/api/catalog', { cache: 'no-store' })
+    if (!r.ok) throw new Error('catalog')
+    return await r.json()
+  } catch {
+    return { products: [] }
+  }
+}
+
+async function boot() {
+  const catalog = await fetchCatalog()
+  const track = document.querySelector('.js-carousel-track')
+  renderProducts(track, catalog.products)
+
+  const cart = new Cart()
+  const slider = new Slider()
+
+  const carouselEl = document.querySelector('.js-carousel')
+  const productCarousel = carouselEl ? new ProductCarousel(carouselEl) : null
+  const quickView = new QuickView(cart, productCarousel)
+
+  window.__elegance = { cart, slider, productCarousel, quickView }
+}
+
+boot()

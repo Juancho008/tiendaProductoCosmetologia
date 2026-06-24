@@ -3,11 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "description": "Élégance — Tienda de belleza premium",
+  "type": "module",
   "scripts": {
-    "dev": "serve dist -l 8080",
-    "start": "serve dist -l 8080"
+    "dev": "node server/index.js",
+    "start": "node server/index.js",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy",
+    "cf:secret": "wrangler secret put ADMIN_PASSWORD"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^2.2.0"
   },
   "devDependencies": {
-    "serve": "^14.2.4"
+    "wrangler": "^4.104.0"
   }
 }

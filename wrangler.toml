@@ -1,0 +1,21 @@
+# Cloudflare Worker — Élégance (tienda estática + API de catálogo sobre KV)
+# Docs: https://developers.cloudflare.com/workers/ | https://developers.cloudflare.com/kv/
+
+name = "elegance-estetica"
+main = "worker/index.js"
+compatibility_date = "2024-11-01"
+
+# Sitio estático (dist/) servido por Workers Assets
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# Namespace KV de la estética (catálogo + imágenes)
+[[kv_namespaces]]
+binding = "CATALOG_KV"
+id = "7b201158f2a1490b8f4b44bf453e3049"
+
+# Contraseña del panel /admin.
+# Para producción NO la pongas acá; usá un secreto:
+#   npx wrangler secret put ADMIN_PASSWORD
+# Para desarrollo local usá el archivo .dev.vars (no se sube a git).

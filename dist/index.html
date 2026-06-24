@@ -15,13 +15,7 @@
     <nav class="nav nav--left js-nav">
       <ul>
         <li>
-          <a href="#"><span>Maquillaje</span></a>
-        </li>
-        <li>
-          <a href="#"><span>Skincare</span></a>
-        </li>
-        <li>
-          <a href="#" class="is-active"><span>Colecciones</span></a>
+          <a href="#" class="is-active"><span>Tienda</span></a>
         </li>
       </ul>
     </nav>
@@ -37,8 +31,14 @@
           <a href="#"><span>Contacto</span></a>
         </li>
         <li>
-          <a href="#" class="js-cart-toggle">
-            <span>Carrito</span>
+          <a href="#" class="js-cart-toggle" aria-label="Abrir carrito">
+            <span class="cart-link__label">Carrito</span>
+            <svg class="cart-link__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M6 6h15l-1.5 9h-12z"/>
+              <path d="M6 6L5 3H2"/>
+              <circle cx="9" cy="20" r="1"/>
+              <circle cx="18" cy="20" r="1"/>
+            </svg>
             <div class="cart-total js-cart-count">0</div>
           </a>
         </li>
@@ -88,63 +88,17 @@
         <div class="slide__content slide__content--grid">
           <div class="store-showcase js-store-showcase">
             <h2 class="store-title js-store-title">Tienda</h2>
-            <div class="store-grid">
-            <figure class="store-grid__item js-slide__img js-product" data-id="p1" data-name="Paleta Maquillaje" data-price="24990" data-image="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Paleta Maquillaje">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Paleta Maquillaje</span>
-                <span class="store-grid__price">$24.990</span>
-              </figcaption>
-            </figure>
-            <figure class="store-grid__item js-slide__img js-product" data-id="p2" data-name="Serum Facial" data-price="18500" data-image="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Serum Facial">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Serum Facial</span>
-                <span class="store-grid__price">$18.500</span>
-              </figcaption>
-            </figure>
-            <figure class="store-grid__item js-slide__img js-product" data-id="p3" data-name="Crema Hidratante" data-price="12990" data-image="https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Crema Hidratante">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Crema Hidratante</span>
-                <span class="store-grid__price">$12.990</span>
-              </figcaption>
-            </figure>
-            <figure class="store-grid__item js-slide__img js-product" data-id="p4" data-name="Labial Premium" data-price="9990" data-image="https://images.unsplash.com/photo-1595475207225-428b62bda831?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1595475207225-428b62bda831?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Labial Premium">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Labial Premium</span>
-                <span class="store-grid__price">$9.990</span>
-              </figcaption>
-            </figure>
-            <figure class="store-grid__item js-slide__img js-product" data-id="p5" data-name="Protector Solar" data-price="15500" data-image="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Protector Solar">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Protector Solar</span>
-                <span class="store-grid__price">$15.500</span>
-              </figcaption>
-            </figure>
-            <figure class="store-grid__item js-slide__img js-product" data-id="p6" data-name="Mascarilla Facial" data-price="8990" data-image="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Mascarilla Facial">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Mascarilla Facial</span>
-                <span class="store-grid__price">$8.990</span>
-              </figcaption>
-            </figure>
-            <figure class="store-grid__item js-slide__img js-product" data-id="p7" data-name="Esmalte Premium" data-price="6990" data-image="https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Esmalte Premium">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Esmalte Premium</span>
-                <span class="store-grid__price">$6.990</span>
-              </figcaption>
-            </figure>
-            <figure class="store-grid__item js-slide__img js-product" data-id="p8" data-name="Kit Nutricional" data-price="32990" data-image="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80">
-              <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" alt="Kit Nutricional">
-              <figcaption class="store-grid__caption">
-                <span class="store-grid__name">Kit Nutricional</span>
-                <span class="store-grid__price">$32.990</span>
-              </figcaption>
-            </figure>
+            <div class="store-carousel js-carousel">
+            <button type="button" class="carousel__arrow carousel__arrow--prev js-carousel-prev" aria-label="Anterior">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="carousel__viewport js-carousel-viewport">
+            <div class="store-grid carousel__track js-carousel-track"></div>
+            </div>
+            <button type="button" class="carousel__arrow carousel__arrow--next js-carousel-next" aria-label="Siguiente">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <div class="carousel__dots js-carousel-dots" role="tablist" aria-label="Páginas de productos"></div>
           </div>
           </div>
         </div>
@@ -195,6 +149,22 @@
     </div>
 
     <div class="cart-toast js-cart-toast" aria-live="polite"></div>
+
+    <div class="quickview-overlay js-quickview-overlay" aria-hidden="true">
+      <div class="quickview js-quickview" role="dialog" aria-label="Detalle del producto">
+        <button type="button" class="quickview__close js-quickview-close" aria-label="Cerrar">&times;</button>
+        <figure class="quickview__media">
+          <img class="quickview__img js-quickview-img" src="" alt="">
+        </figure>
+        <div class="quickview__info">
+          <span class="quickview__eyebrow">Élégance</span>
+          <h3 class="quickview__name js-quickview-name"></h3>
+          <p class="quickview__price js-quickview-price"></p>
+          <p class="quickview__desc js-quickview-desc"></p>
+          <button type="button" class="quickview__add js-quickview-add">Agregar al carrito</button>
+        </div>
+      </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/99/three.min.js"></script>
