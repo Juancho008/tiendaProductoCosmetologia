@@ -7,6 +7,11 @@ let messageTimer = null
 
 const peso = (n) => '$' + Number(n || 0).toLocaleString('es-CL')
 
+const API_BASE = (window.ELEGANCE_CONFIG && window.ELEGANCE_CONFIG.apiBase) || ''
+const apiUrl = (path) => `${API_BASE}${path}`
+const resolveImg = (url) =>
+  url && url.startsWith('/') ? `${API_BASE}${url}` : url
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -35,7 +40,7 @@ function showMessage(text, isError = false) {
 }
 
 async function login(password) {
-  const r = await fetch('/api/admin/login', {
+  const r = await fetch(apiUrl('/api/admin/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password })
@@ -56,7 +61,7 @@ function logout() {
 }
 
 async function loadCatalog() {
-  const r = await fetch('/api/admin/catalog', { headers: authHeaders() })
+  const r = await fetch(apiUrl('/api/admin/catalog'), { headers: authHeaders() })
   if (r.status === 401) {
     logout()
     throw new Error('Sesión expirada')
@@ -70,7 +75,7 @@ async function loadCatalog() {
 }
 
 async function saveCatalog() {
-  const r = await fetch('/api/admin/catalog', {
+  const r = await fetch(apiUrl('/api/admin/catalog'), {
     method: 'PUT',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(catalog)
@@ -92,7 +97,7 @@ async function saveCatalog() {
 async function uploadImage(idx, file) {
   const form = new FormData()
   form.append('image', file)
-  const r = await fetch('/api/admin/upload', {
+  const r = await fetch(apiUrl('/api/admin/upload'), {
     method: 'POST',
     headers: authHeaders(),
     body: form
@@ -158,7 +163,7 @@ function renderLogin() {
 }
 
 function productRowHTML(p, idx) {
-  const image = p.image || ''
+  const image = resolveImg(p.image) || ''
   const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="%231e0a0e"/></svg>')
   return `
   <div class="product-row" data-idx="${idx}">

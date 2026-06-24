@@ -3,10 +3,21 @@ import { seedCatalog } from "../server/seed.js";
 const CATALOG_KEY = "catalog";
 const IMG_PREFIX = "img:";
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+};
+
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", ...extra },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      ...CORS,
+      ...extra,
+    },
   });
 }
 
@@ -81,6 +92,7 @@ async function handleApi(request, env, url) {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store, must-revalidate",
+        ...CORS,
       },
     });
   }
@@ -159,6 +171,7 @@ async function handleImage(request, env, url) {
     headers: {
       "Content-Type": metadata?.contentType || "application/octet-stream",
       "Cache-Control": "public, max-age=604800",
+      "Access-Control-Allow-Origin": "*",
     },
   });
 }
@@ -166,6 +179,10 @@ async function handleImage(request, env, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: CORS });
+    }
 
     if (url.pathname.startsWith("/api/")) {
       return handleApi(request, env, url);

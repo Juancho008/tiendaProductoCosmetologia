@@ -967,6 +967,11 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;')
 }
 
+const API_BASE = (window.ELEGANCE_CONFIG && window.ELEGANCE_CONFIG.apiBase) || ''
+const apiUrl = (path) => `${API_BASE}${path}`
+const resolveImg = (url) =>
+  url && url.startsWith('/') ? `${API_BASE}${url}` : url
+
 function renderProducts(track, products) {
   if (!track) return
   if (!Array.isArray(products) || !products.length) {
@@ -976,7 +981,7 @@ function renderProducts(track, products) {
 
   track.innerHTML = products
     .map((p) => {
-      const image = p.image || PLACEHOLDER_IMG
+      const image = resolveImg(p.image) || PLACEHOLDER_IMG
       return `
       <figure class="store-grid__item js-slide__img js-product"
         data-id="${escapeHtml(p.id)}"
@@ -1102,7 +1107,7 @@ links.forEach((link) => {
 
 async function fetchCatalog() {
   try {
-    const r = await fetch('/api/catalog', { cache: 'no-store' })
+    const r = await fetch(apiUrl('/api/catalog'), { cache: 'no-store' })
     if (!r.ok) throw new Error('catalog')
     return await r.json()
   } catch {
