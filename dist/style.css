@@ -925,7 +925,7 @@ li {
   }
 
   .slide__content--grid {
-    padding: 3.25rem 0 1rem;
+    padding: 3.25rem clamp(1rem, 4.5vw, 1.5rem) 1.25rem;
     overflow: hidden;
     align-items: center;
     justify-content: center;
@@ -933,6 +933,7 @@ li {
 
   .store-showcase {
     width: 100%;
+    max-width: 100%;
     gap: 1rem;
     padding-bottom: 0;
     overflow: hidden;
@@ -961,7 +962,7 @@ li {
   .store-title {
     font-size: 1.65rem;
     letter-spacing: 0.22em;
-    padding: 0 0.65rem;
+    padding: 0;
   }
 
   .store-carousel {
