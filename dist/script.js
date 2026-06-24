@@ -1162,6 +1162,13 @@ function renderCategoryTabs(container, categories, onSelect) {
   })
 }
 
+function normalizeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 async function boot() {
   const catalog = await fetchCatalog()
   const categories = normalizeCategories(catalog)
@@ -1178,18 +1185,45 @@ async function boot() {
   const quickView = new QuickView(cart, productCarousel)
 
   const catsEl = document.querySelector('.js-store-cats')
-  const selectCategory = (catId) => {
-    const products =
-      catId === 'all'
+  const searchInput = document.querySelector('.js-store-search')
+  const emptyEl = document.querySelector('.js-store-empty')
+
+  let currentCat = 'all'
+  let currentQuery = ''
+
+  const applyFilter = () => {
+    const base =
+      currentCat === 'all'
         ? allProducts
-        : categories.find((c) => c.id === catId)?.products || []
-    renderProducts(track, products)
+        : categories.find((c) => c.id === currentCat)?.products || []
+    const q = normalizeText(currentQuery.trim())
+    const list = q
+      ? base.filter(
+          (p) =>
+            normalizeText(p.name).includes(q) ||
+            normalizeText(p.description).includes(q)
+        )
+      : base
+
+    renderProducts(track, list)
     quickView.setupProducts()
     productCarousel?.reload()
+    if (emptyEl) emptyEl.hidden = list.length > 0
   }
-  renderCategoryTabs(catsEl, categories, selectCategory)
 
-  window.__elegance = { cart, slider, productCarousel, quickView }
+  renderCategoryTabs(catsEl, categories, (catId) => {
+    currentCat = catId
+    applyFilter()
+  })
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      currentQuery = searchInput.value
+      applyFilter()
+    })
+  }
+
+  window.__elegance = { cart, slider, productCarousel, quickView, applyFilter }
 }
 
 boot()
