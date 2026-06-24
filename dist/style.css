@@ -456,6 +456,52 @@ li {
   opacity: 0.85;
 }
 
+.store-cats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.4rem auto 0.4rem;
+  max-width: 52rem;
+}
+
+.store-cats:empty {
+  display: none;
+}
+
+.store-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: "Jost", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(247, 240, 235, 0.7);
+  background: rgba(30, 10, 14, 0.5);
+  border: 1px solid rgba(201, 169, 98, 0.25);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.store-cat:hover {
+  color: #f7f0eb;
+  border-color: rgba(201, 169, 98, 0.6);
+}
+
+.store-cat.is-active {
+  color: #1e0a0e;
+  background: linear-gradient(135deg, #e8d5b0, #c9a962);
+  border-color: #c9a962;
+}
+
+.store-cat__emoji {
+  font-size: 0.85rem;
+}
+
 .store-carousel {
   --per-view: 4;
   --gap: 1.35rem;

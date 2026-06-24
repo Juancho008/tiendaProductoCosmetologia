@@ -2,9 +2,9 @@ import express from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
 import { fileURLToPath } from "url";
 import { seedCatalog } from "./seed.js";
+import { slugify, sanitizeCatalog, publicCatalog } from "./catalog.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,41 +33,6 @@ function readCatalog() {
 
 function writeCatalog(catalog) {
   fs.writeFileSync(CATALOG_FILE, JSON.stringify(catalog, null, 2));
-}
-
-function slugify(text) {
-  return String(text || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function sanitizeProduct(raw, index) {
-  const id = raw.id && String(raw.id).trim()
-    ? String(raw.id).trim()
-    : `p-${Date.now()}-${index}-${crypto.randomBytes(3).toString("hex")}`;
-  return {
-    id,
-    name: String(raw.name || "").trim() || "Sin nombre",
-    price: Math.max(0, Math.round(Number(raw.price) || 0)),
-    category: String(raw.category || "").trim(),
-    available: raw.available !== false,
-    image: String(raw.image || "").trim(),
-    description: String(raw.description || "").trim()
-  };
-}
-
-function sanitizeCatalog(raw) {
-  const products = Array.isArray(raw?.products) ? raw.products : [];
-  return {
-    store: {
-      name: String(raw?.store?.name || "Élégance").trim(),
-      tagline: String(raw?.store?.tagline || "Belleza Premium").trim()
-    },
-    products: products.map(sanitizeProduct)
-  };
 }
 
 const app = express();
@@ -103,9 +68,7 @@ const upload = multer({
 app.use("/uploads", express.static(UPLOADS_DIR, { maxAge: "7d" }));
 
 app.get("/api/catalog", (req, res) => {
-  const catalog = readCatalog();
-  catalog.products = catalog.products.filter((p) => p.available !== false);
-  res.json(catalog);
+  res.json(publicCatalog(readCatalog()));
 });
 
 app.post("/api/admin/login", (req, res) => {
@@ -117,7 +80,7 @@ app.post("/api/admin/login", (req, res) => {
 });
 
 app.get("/api/admin/catalog", requireAuth, (req, res) => {
-  res.json(readCatalog());
+  res.json(sanitizeCatalog(readCatalog()));
 });
 
 app.put("/api/admin/catalog", requireAuth, (req, res) => {

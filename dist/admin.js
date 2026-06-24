@@ -2,15 +2,19 @@ const TOKEN_KEY = 'elegance_admin_token'
 const root = document.getElementById('admin-root')
 
 let token = sessionStorage.getItem(TOKEN_KEY) || ''
-let catalog = { store: { name: '', tagline: '' }, products: [] }
+let state = null // { site, groups: [{ id, label, subcategories: [{ id, label, emoji, enabled, products }] }] }
+let expanded = new Set(['site'])
+let activeNav = 'site'
+let pendingScroll = null
+let loading = false
 let messageTimer = null
-
-const peso = (n) => '$' + Number(n || 0).toLocaleString('es-CL')
 
 const API_BASE = (window.ELEGANCE_CONFIG && window.ELEGANCE_CONFIG.apiBase) || ''
 const apiUrl = (path) => `${API_BASE}${path}`
 const resolveImg = (url) =>
   url && url.startsWith('/') ? `${API_BASE}${url}` : url
+
+const peso = (n) => '$' + Number(n || 0).toLocaleString('es-CL')
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -19,6 +23,15 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+}
+
+function slugify(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
 }
 
 function authHeaders(extra = {}) {
@@ -36,8 +49,96 @@ function showMessage(text, isError = false) {
   el.classList.toggle('is-error', isError)
   el.classList.add('is-visible')
   clearTimeout(messageTimer)
-  messageTimer = setTimeout(() => el.classList.remove('is-visible'), 3000)
+  messageTimer = setTimeout(() => el.classList.remove('is-visible'), 3500)
 }
+
+// ---------- Conversión catálogo plano <-> grupos ----------
+
+function catalogToGroups(catalog) {
+  const groupsMap = new Map()
+  for (const cat of catalog?.categories || []) {
+    const clone = JSON.parse(JSON.stringify(cat))
+    if (cat.group) {
+      const parentId = cat.groupId || slugify(cat.group)
+      if (!groupsMap.has(parentId)) {
+        groupsMap.set(parentId, { id: parentId, label: cat.group, subcategories: [] })
+      }
+      groupsMap.get(parentId).subcategories.push(clone)
+    } else {
+      const id = cat.groupId || slugify(cat.label) || cat.id
+      groupsMap.set(id + '::' + cat.id, {
+        id: id,
+        label: cat.label,
+        subcategories: [clone]
+      })
+    }
+  }
+  return {
+    site: JSON.parse(JSON.stringify(catalog?.site || {})),
+    groups: [...groupsMap.values()]
+  }
+}
+
+function groupsToCatalog(editorState) {
+  const categories = []
+  let order = 1
+  for (const group of editorState.groups || []) {
+    const multiSub = group.subcategories.length > 1
+    for (const sub of group.subcategories || []) {
+      const subId = sub.id || slugify(sub.label)
+      categories.push({
+        id: subId,
+        label: sub.label || 'Sin nombre',
+        emoji: sub.emoji || '✨',
+        group: multiSub ? group.label : undefined,
+        groupId: multiSub ? group.id : undefined,
+        enabled: sub.enabled !== false,
+        order: order++,
+        products: (sub.products || []).map((p) => ({
+          ...p,
+          id: p.id || `${subId}/${p.code || slugify(p.name)}`,
+          category: subId
+        }))
+      })
+    }
+  }
+  return {
+    site: editorState.site || {},
+    categories
+  }
+}
+
+function emptyProduct(subId) {
+  const code = String(Date.now()).slice(-4)
+  return {
+    id: `${subId}/nuevo-${code}`,
+    name: '',
+    price: 0,
+    description: '',
+    code: '',
+    available: true,
+    image: '',
+    category: subId
+  }
+}
+
+function emptySubcategory(groupId) {
+  const id = `${groupId || 'cat'}-sub-${String(Date.now()).slice(-5)}`
+  return {
+    id,
+    label: 'Nueva subcategoría',
+    emoji: '✨',
+    enabled: true,
+    products: []
+  }
+}
+
+function emptyGroup() {
+  const id = slugify('grupo-' + Date.now())
+  return { id, label: 'Nueva categoría', subcategories: [emptySubcategory(id)] }
+}
+
+// ---------- API ----------
 
 async function login(password) {
   const r = await fetch(apiUrl('/api/admin/login'), {
@@ -57,6 +158,7 @@ async function login(password) {
 function logout() {
   sessionStorage.removeItem(TOKEN_KEY)
   token = ''
+  state = null
   renderLogin()
 }
 
@@ -68,35 +170,43 @@ async function loadCatalog() {
   }
   if (!r.ok) throw new Error('No se pudo cargar el catálogo')
   const data = await r.json()
-  catalog = {
-    store: { name: data.store?.name || '', tagline: data.store?.tagline || '' },
-    products: Array.isArray(data.products) ? data.products : []
-  }
+  state = catalogToGroups(data)
 }
 
 async function saveCatalog() {
-  const r = await fetch(apiUrl('/api/admin/catalog'), {
-    method: 'PUT',
-    headers: authHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify(catalog)
-  })
-  if (r.status === 401) {
-    logout()
-    return
+  if (loading) return
+  loading = true
+  renderEditor()
+  try {
+    const payload = groupsToCatalog(state)
+    const r = await fetch(apiUrl('/api/admin/catalog'), {
+      method: 'PUT',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload)
+    })
+    if (r.status === 401) {
+      logout()
+      return
+    }
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) throw new Error(data.error || 'No se pudo guardar')
+    state = catalogToGroups(data.catalog)
+    showMessage('Cambios guardados en Cloudflare. Recargá la tienda para verlos.')
+  } catch (err) {
+    showMessage(err.message, true)
+  } finally {
+    loading = false
+    renderEditor()
   }
-  const data = await r.json().catch(() => ({}))
-  if (!r.ok) {
-    showMessage(data.error || 'No se pudo guardar', true)
-    return
-  }
-  catalog = data.catalog
-  renderList()
-  showMessage('Cambios guardados. Recargá la tienda para verlos.')
 }
 
-async function uploadImage(idx, file) {
+async function uploadImage(gi, si, pi, file) {
+  const sub = state.groups[gi]?.subcategories[si]
+  const product = sub?.products[pi]
+  if (!product) return
   const form = new FormData()
   form.append('image', file)
+  showMessage('Subiendo imagen…')
   const r = await fetch(apiUrl('/api/admin/upload'), {
     method: 'POST',
     headers: authHeaders(),
@@ -107,27 +217,24 @@ async function uploadImage(idx, file) {
     showMessage(data.error || 'No se pudo subir la imagen', true)
     return
   }
-  catalog.products[idx].image = data.url
-  const row = root.querySelector(`.product-row[data-idx="${idx}"]`)
-  if (row) {
-    row.querySelector('.product-thumb img').src = data.url
-    const hidden = row.querySelector('input[data-field="image"]')
-    if (hidden) hidden.value = data.url
-  }
+  product.image = data.url
   showMessage('Imagen subida')
+  renderEditor()
 }
 
-function emptyProduct() {
-  return {
-    id: 'new-' + Date.now(),
-    name: '',
-    price: 0,
-    category: '',
-    available: true,
-    image: '',
-    description: ''
-  }
+// ---------- IDs de sección ----------
+
+function sectionId(gi, si) {
+  if (gi === undefined) return 'site'
+  if (si === undefined) return `g-${gi}`
+  return `g-${gi}-s-${si}`
 }
+
+function isOpen(id) {
+  return expanded.has(id)
+}
+
+// ---------- Render ----------
 
 function renderLogin() {
   root.innerHTML = `
@@ -162,124 +269,239 @@ function renderLogin() {
   })
 }
 
-function productRowHTML(p, idx) {
-  const image = resolveImg(p.image) || ''
+function totalProducts() {
+  return state.groups.reduce(
+    (n, g) => n + g.subcategories.reduce((m, s) => m + s.products.length, 0),
+    0
+  )
+}
+
+function navHTML() {
+  const items = [
+    `<li><button type="button" class="nav-btn depth-0${activeNav === 'site' ? ' active' : ''}" data-action="nav" data-id="site">
+      <span class="nav-emoji">🏪</span><span class="nav-label">Datos de tienda</span></button></li>`
+  ]
+  state.groups.forEach((group, gi) => {
+    const gid = sectionId(gi)
+    const visible = group.subcategories.some((s) => s.enabled !== false)
+    items.push(`<li><button type="button" class="nav-btn depth-0${activeNav === gid ? ' active' : ''}${visible ? '' : ' is-hidden-cat'}" data-action="nav" data-id="${gid}">
+      <span class="nav-emoji">📁</span><span class="nav-label">${escapeHtml(group.label)}</span></button></li>`)
+    group.subcategories.forEach((sub, si) => {
+      const sid = sectionId(gi, si)
+      const subVisible = sub.enabled !== false
+      items.push(`<li><button type="button" class="nav-btn depth-1${activeNav === sid ? ' active' : ''}${subVisible ? '' : ' is-hidden-cat'}" data-action="nav" data-id="${sid}">
+        <span class="nav-emoji">${escapeHtml(sub.emoji || '✨')}</span><span class="nav-label">${escapeHtml(sub.label)}</span><span class="nav-count">${sub.products.length}</span></button></li>`)
+    })
+  })
+  return items.join('')
+}
+
+function productRowHTML(product, gi, si, pi) {
+  const image = resolveImg(product.image) || ''
   const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="%231e0a0e"/></svg>')
+  const k = `${gi}-${si}-${pi}`
   return `
-  <div class="product-row" data-idx="${idx}">
-    <div class="product-thumb">
+  <div class="product-row" data-gi="${gi}" data-si="${si}" data-pi="${pi}">
+    <div class="product-image">
       <img src="${escapeHtml(thumb)}" alt="">
-      <label class="upload-label">
-        Subir foto
-        <input type="file" accept="image/*" data-action="upload" data-idx="${idx}">
+      <label class="image-upload">📷 Foto
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-action="upload" data-gi="${gi}" data-si="${si}" data-pi="${pi}">
       </label>
     </div>
-    <div class="product-fields">
-      <label class="full">Nombre
-        <input type="text" data-idx="${idx}" data-field="name" value="${escapeHtml(p.name)}" placeholder="Nombre del producto">
-      </label>
-      <label>Precio
-        <input type="number" min="0" step="1" data-idx="${idx}" data-field="price" value="${escapeHtml(p.price)}">
-      </label>
-      <label>Categoría
-        <input type="text" data-idx="${idx}" data-field="category" value="${escapeHtml(p.category)}" placeholder="Skincare, Maquillaje…">
-      </label>
-      <label class="check">
-        <input type="checkbox" data-idx="${idx}" data-field="available" ${p.available !== false ? 'checked' : ''}>
-        Disponible
-      </label>
-      <label class="full">Descripción
-        <textarea data-idx="${idx}" data-field="description" placeholder="Descripción del producto">${escapeHtml(p.description)}</textarea>
-      </label>
-      <input type="hidden" data-idx="${idx}" data-field="image" value="${escapeHtml(image)}">
-      <div class="product-foot">
-        <span style="color:var(--muted);font-size:0.72rem">${peso(p.price)}</span>
-        <button type="button" class="btn btn-danger btn-sm" data-action="remove" data-idx="${idx}">Eliminar</button>
-      </div>
-    </div>
+    <label class="f-code">Código
+      <input type="text" value="${escapeHtml(product.code || '')}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="code" placeholder="000">
+    </label>
+    <label class="f-name">Nombre
+      <input type="text" value="${escapeHtml(product.name)}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="name">
+    </label>
+    <label class="f-price">Precio
+      <input type="number" min="0" step="1" value="${escapeHtml(product.price ?? 0)}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="price">
+    </label>
+    <label class="f-desc">Descripción
+      <textarea data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="description" placeholder="Descripción">${escapeHtml(product.description || '')}</textarea>
+    </label>
+    <label class="f-check">
+      <input type="checkbox" ${product.available !== false ? 'checked' : ''} data-action="toggle-available" data-gi="${gi}" data-si="${si}" data-pi="${pi}">
+      Disponible
+    </label>
+    <button type="button" class="btn-icon-danger" data-action="remove-product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" aria-label="Eliminar producto" title="Eliminar ${escapeHtml(product.name)}">✕</button>
   </div>`
 }
 
-function renderList() {
-  const list = document.getElementById('product-list')
-  if (!list) return
-  list.innerHTML = catalog.products.map(productRowHTML).join('')
-  const countEl = document.getElementById('product-count')
-  if (countEl) countEl.textContent = `${catalog.products.length} producto(s)`
+function subcategoryHTML(sub, gi, si, canRemove) {
+  const sid = sectionId(gi, si)
+  const open = isOpen(sid)
+  const visible = sub.enabled !== false
+  const body = !open ? '' : `
+    <div class="section-body">
+      <div class="sub-head">
+        <label>Subcategoría
+          <input type="text" value="${escapeHtml(sub.label)}" data-kind="sub" data-gi="${gi}" data-si="${si}" data-field="label" placeholder="Ej: Skincare, Maquillaje">
+        </label>
+        <label class="emoji-field">Emoji
+          <input type="text" maxlength="4" value="${escapeHtml(sub.emoji || '✨')}" data-kind="sub" data-gi="${gi}" data-si="${si}" data-field="emoji">
+        </label>
+        <button type="button" class="btn-toggle${visible ? '' : ' off'}" data-action="toggle-sub" data-gi="${gi}" data-si="${si}">${visible ? '👁 Visible' : '🚫 Oculta'}</button>
+        ${canRemove ? `<button type="button" class="btn btn-ghost btn-sm" data-action="remove-sub" data-gi="${gi}" data-si="${si}">Quitar</button>` : ''}
+      </div>
+      <div class="products">
+        <div class="products-head">
+          <span>Productos</span>
+          <button type="button" class="btn btn-sm" data-action="add-product" data-gi="${gi}" data-si="${si}">+ Agregar</button>
+        </div>
+        ${sub.products.length === 0
+          ? '<p class="hint">Sin productos.</p>'
+          : `<div class="product-list">${sub.products.map((p, pi) => productRowHTML(p, gi, si, pi)).join('')}</div>`}
+      </div>
+    </div>`
+
+  return `
+  <div class="subcategory section${visible ? '' : ' section-off'}${open ? ' is-open' : ''}" id="editor-${sid}">
+    <button type="button" class="sub-toggle" data-action="toggle-section" data-id="${sid}" aria-expanded="${open}">
+      <span>${escapeHtml(sub.emoji || '✨')} ${escapeHtml(sub.label)} <small>${sub.products.length} producto(s)</small></span>
+      <span class="sub-meta">${visible ? '' : '<span class="badge">Oculta</span>'}<span class="chevron">${open ? '▼' : '▶'}</span></span>
+    </button>
+    ${body}
+  </div>`
+}
+
+function groupHTML(group, gi) {
+  const gid = sectionId(gi)
+  const open = isOpen(gid)
+  const visible = group.subcategories.some((s) => s.enabled !== false)
+  const canRemoveSub = group.subcategories.length > 1
+  const body = !open ? '' : `
+    <div class="section-body">
+      <div class="group-head">
+        <label class="group-label">Categoría principal
+          <input type="text" value="${escapeHtml(group.label)}" data-kind="group" data-gi="${gi}" data-field="label" placeholder="Ej: Skincare">
+        </label>
+        <button type="button" class="btn-toggle${visible ? '' : ' off'}" data-action="toggle-group" data-gi="${gi}">${visible ? '👁 Visible' : '🚫 Oculta'}</button>
+        <button type="button" class="btn btn-danger btn-sm" data-action="remove-group" data-gi="${gi}">Eliminar</button>
+      </div>
+      ${group.subcategories.map((sub, si) => subcategoryHTML(sub, gi, si, canRemoveSub)).join('')}
+      <button type="button" class="btn btn-secondary btn-sm" data-action="add-sub" data-gi="${gi}">+ Agregar subcategoría</button>
+    </div>`
+
+  return `
+  <section class="card group-card section${visible ? '' : ' section-off'}${open ? ' is-open' : ''}" id="editor-${gid}">
+    <button type="button" class="section-toggle" data-action="toggle-section" data-id="${gid}" aria-expanded="${open}">
+      <span>📁 ${escapeHtml(group.label)} <small>${group.subcategories.length} subcategoría(s)</small></span>
+      <span class="chevron">${open ? '▼' : '▶'}</span>
+    </button>
+    ${body}
+  </section>`
+}
+
+function siteSectionHTML() {
+  const open = isOpen('site')
+  const site = state.site || {}
+  const body = !open ? '' : `
+    <div class="section-body">
+      <div class="grid-2">
+        <label>Nombre de la tienda
+          <input type="text" value="${escapeHtml(site.storeName || '')}" data-site="storeName">
+        </label>
+        <label>WhatsApp (sin + ni espacios)
+          <input type="text" value="${escapeHtml(site.whatsappNumber || '')}" data-site="whatsappNumber" placeholder="549...">
+        </label>
+      </div>
+    </div>`
+  return `
+  <section class="card section${open ? ' is-open' : ''}" id="editor-site">
+    <button type="button" class="section-toggle" data-action="toggle-section" data-id="site" aria-expanded="${open}">
+      <span>🏪 Datos de la tienda</span>
+      <span class="chevron">${open ? '▼' : '▶'}</span>
+    </button>
+    ${body}
+  </section>`
 }
 
 function renderEditor() {
+  if (!state) return
+  const saveLabel = loading ? 'Guardando…' : 'Guardar cambios'
   root.innerHTML = `
     <header class="admin-header">
-      <h1>Élégance · Admin</h1>
+      <div>
+        <h1>Panel de administración</h1>
+        <p>Editá las categorías, subcategorías y productos del catálogo</p>
+      </div>
       <div class="admin-actions">
         <a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noreferrer">Ver tienda</a>
         <button type="button" class="btn btn-ghost btn-sm" data-action="logout">Salir</button>
-        <button type="button" class="btn btn-primary btn-sm" data-action="save">Guardar</button>
       </div>
     </header>
 
-    <main class="admin-main">
-      <section class="card">
-        <h2>Datos de la tienda</h2>
-        <div class="grid-2">
-          <label>Nombre
-            <input type="text" data-store="name" value="${escapeHtml(catalog.store.name)}">
-          </label>
-          <label>Eslogan
-            <input type="text" data-store="tagline" value="${escapeHtml(catalog.store.tagline)}">
-          </label>
-        </div>
-      </section>
+    <div class="editor-toolbar">
+      <div class="toolbar-info">
+        <strong>Editor de catálogo</strong>
+        <span>${state.groups.length} categoría(s) · ${totalProducts()} producto(s)</span>
+      </div>
+      <div class="toolbar-actions">
+        <button type="button" class="btn btn-ghost btn-sm" data-action="expand-all">Expandir todo</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="collapse-all">Colapsar</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="add-group">+ Categoría</button>
+        <button type="button" class="btn btn-primary btn-sm" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
+      </div>
+    </div>
 
-      <section class="card">
-        <div class="products-head">
-          <h2>Productos</h2>
-          <button type="button" class="btn btn-sm" data-action="add">+ Agregar producto</button>
-        </div>
-        <div id="product-list"></div>
-      </section>
-    </main>
+    <div class="editor-body">
+      <nav class="editor-nav" aria-label="Secciones del catálogo">
+        <p class="nav-title">Ir a…</p>
+        <ul>${navHTML()}</ul>
+      </nav>
+      <div class="editor-main">
+        ${siteSectionHTML()}
+        ${state.groups.map((g, gi) => groupHTML(g, gi)).join('')}
+      </div>
+    </div>
 
     <div class="savebar">
-      <span id="product-count"></span>
-      <button type="button" class="btn btn-primary" data-action="save">Guardar cambios</button>
+      <span>${totalProducts()} productos en el catálogo</span>
+      <button type="button" class="btn btn-primary" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
     </div>`
 
-  renderList()
-  bindEditor()
+  if (pendingScroll) {
+    const el = document.getElementById('editor-' + pendingScroll)
+    pendingScroll = null
+    if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 }
 
-function bindEditor() {
+// ---------- Eventos ----------
+
+function bindRoot() {
   root.addEventListener('input', (e) => {
     const t = e.target
-    if (t.dataset.store) {
-      catalog.store[t.dataset.store] = t.value
+    if (t.dataset.site) {
+      state.site = state.site || {}
+      state.site[t.dataset.site] = t.value
       return
     }
-    const idx = t.dataset.idx
+    const gi = Number(t.dataset.gi)
+    const si = Number(t.dataset.si)
+    const pi = Number(t.dataset.pi)
     const field = t.dataset.field
-    if (idx == null || !field || field === 'available') return
-    const product = catalog.products[Number(idx)]
-    if (!product) return
-    if (field === 'price') {
-      product.price = Number(t.value) || 0
-      const foot = root.querySelector(`.product-row[data-idx="${idx}"] .product-foot span`)
-      if (foot) foot.textContent = peso(product.price)
-    } else {
-      product[field] = t.value
+    if (!t.dataset.kind || !field) return
+    if (t.dataset.kind === 'group') {
+      state.groups[gi][field] = t.value
+    } else if (t.dataset.kind === 'sub') {
+      state.groups[gi].subcategories[si][field] = t.value
+    } else if (t.dataset.kind === 'product') {
+      const product = state.groups[gi].subcategories[si].products[pi]
+      if (!product) return
+      product[field] = field === 'price' ? Number(t.value) || 0 : t.value
     }
   })
 
   root.addEventListener('change', (e) => {
     const t = e.target
-    const idx = Number(t.dataset.idx)
-    if (t.dataset.field === 'available') {
-      if (catalog.products[idx]) catalog.products[idx].available = t.checked
-      return
-    }
-    if (t.dataset.action === 'upload' && t.files && t.files[0]) {
-      uploadImage(idx, t.files[0])
+    const action = t.dataset.action
+    if (action === 'toggle-available') {
+      const p = state.groups[Number(t.dataset.gi)]?.subcategories[Number(t.dataset.si)]?.products[Number(t.dataset.pi)]
+      if (p) p.available = t.checked
+    } else if (action === 'upload' && t.files && t.files[0]) {
+      uploadImage(Number(t.dataset.gi), Number(t.dataset.si), Number(t.dataset.pi), t.files[0])
       t.value = ''
     }
   })
@@ -288,21 +510,102 @@ function bindEditor() {
     const btn = e.target.closest('[data-action]')
     if (!btn) return
     const action = btn.dataset.action
+    const gi = Number(btn.dataset.gi)
+    const si = Number(btn.dataset.si)
+    const pi = Number(btn.dataset.pi)
 
-    if (action === 'logout') logout()
-    else if (action === 'save') saveCatalog()
-    else if (action === 'add') {
-      catalog.products.push(emptyProduct())
-      renderList()
-    } else if (action === 'remove') {
-      const idx = Number(btn.dataset.idx)
-      catalog.products.splice(idx, 1)
-      renderList()
+    switch (action) {
+      case 'logout':
+        logout()
+        break
+      case 'save':
+        saveCatalog()
+        break
+      case 'expand-all': {
+        const all = new Set(['site'])
+        state.groups.forEach((g, i) => {
+          all.add(sectionId(i))
+          g.subcategories.forEach((_, j) => all.add(sectionId(i, j)))
+        })
+        expanded = all
+        renderEditor()
+        break
+      }
+      case 'collapse-all':
+        expanded = new Set()
+        renderEditor()
+        break
+      case 'toggle-section': {
+        const id = btn.dataset.id
+        if (expanded.has(id)) expanded.delete(id)
+        else expanded.add(id)
+        renderEditor()
+        break
+      }
+      case 'nav': {
+        const id = btn.dataset.id
+        activeNav = id
+        expanded.add(id)
+        const m = id.match(/^g-(\d+)/)
+        if (m) expanded.add(`g-${m[1]}`)
+        pendingScroll = id
+        renderEditor()
+        break
+      }
+      case 'add-group':
+        state.groups.push(emptyGroup())
+        expanded.add(sectionId(state.groups.length - 1))
+        renderEditor()
+        break
+      case 'remove-group':
+        if (confirm('¿Eliminar esta categoría y todas sus subcategorías?')) {
+          state.groups.splice(gi, 1)
+          renderEditor()
+        }
+        break
+      case 'toggle-group': {
+        const g = state.groups[gi]
+        const allEnabled = g.subcategories.every((s) => s.enabled !== false)
+        g.subcategories.forEach((s) => { s.enabled = !allEnabled })
+        renderEditor()
+        break
+      }
+      case 'add-sub':
+        state.groups[gi].subcategories.push(emptySubcategory(state.groups[gi].id))
+        expanded.add(sectionId(gi, state.groups[gi].subcategories.length - 1))
+        renderEditor()
+        break
+      case 'remove-sub':
+        if (state.groups[gi].subcategories.length > 1) {
+          state.groups[gi].subcategories.splice(si, 1)
+          renderEditor()
+        }
+        break
+      case 'toggle-sub': {
+        const s = state.groups[gi].subcategories[si]
+        s.enabled = s.enabled === false
+        renderEditor()
+        break
+      }
+      case 'add-product': {
+        const sub = state.groups[gi].subcategories[si]
+        sub.products.push(emptyProduct(sub.id))
+        expanded.add(sectionId(gi)).add(sectionId(gi, si))
+        renderEditor()
+        break
+      }
+      case 'remove-product':
+        state.groups[gi].subcategories[si].products.splice(pi, 1)
+        renderEditor()
+        break
+      default:
+        break
     }
   })
 }
 
 async function init() {
+  bindRoot()
   if (!token) {
     renderLogin()
     return

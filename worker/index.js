@@ -1,4 +1,5 @@
 import { seedCatalog } from "../server/seed.js";
+import { slugify, sanitizeCatalog, publicCatalog } from "../server/catalog.js";
 
 const CATALOG_KEY = "catalog";
 const IMG_PREFIX = "img:";
@@ -31,42 +32,6 @@ function isAuthed(request, env) {
   return token === adminPassword(env);
 }
 
-function slugify(text) {
-  return String(text || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function sanitizeProduct(raw, index) {
-  const id =
-    raw.id && String(raw.id).trim()
-      ? String(raw.id).trim()
-      : `p-${Date.now()}-${index}-${Math.random().toString(16).slice(2, 8)}`;
-  return {
-    id,
-    name: String(raw.name || "").trim() || "Sin nombre",
-    price: Math.max(0, Math.round(Number(raw.price) || 0)),
-    category: String(raw.category || "").trim(),
-    available: raw.available !== false,
-    image: String(raw.image || "").trim(),
-    description: String(raw.description || "").trim(),
-  };
-}
-
-function sanitizeCatalog(raw) {
-  const products = Array.isArray(raw?.products) ? raw.products : [];
-  return {
-    store: {
-      name: String(raw?.store?.name || "Élégance").trim(),
-      tagline: String(raw?.store?.tagline || "Belleza Premium").trim(),
-    },
-    products: products.map(sanitizeProduct),
-  };
-}
-
 async function getCatalog(env) {
   const raw = await env.CATALOG_KV.get(CATALOG_KEY);
   if (raw) {
@@ -87,8 +52,7 @@ async function handleApi(request, env, url) {
 
   if (pathname === "/api/catalog" && method === "GET") {
     const catalog = await getCatalog(env);
-    catalog.products = (catalog.products || []).filter((p) => p.available !== false);
-    return new Response(JSON.stringify(catalog), {
+    return new Response(JSON.stringify(publicCatalog(catalog)), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store, must-revalidate",
@@ -112,7 +76,7 @@ async function handleApi(request, env, url) {
 
   if (pathname === "/api/admin/catalog" && method === "GET") {
     if (!isAuthed(request, env)) return json({ error: "No autorizado" }, 401);
-    return json(await getCatalog(env));
+    return json(sanitizeCatalog(await getCatalog(env)));
   }
 
   if (pathname === "/api/admin/catalog" && method === "PUT") {

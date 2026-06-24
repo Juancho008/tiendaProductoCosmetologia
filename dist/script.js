@@ -918,6 +918,16 @@ class ProductCarousel {
     this.update(false)
   }
 
+  reload() {
+    this.items = [...this.track.querySelectorAll('.store-grid__item')]
+    this.page = 0
+    this.perView = this.getPerView()
+    this.root.style.setProperty('--per-view', this.perView)
+    this.buildDots()
+    this.update(false)
+    this.restartAutoplay()
+  }
+
   bind() {
     this.prevBtn?.addEventListener('click', () => this.prev(true))
     this.nextBtn?.addEventListener('click', () => this.next(true))
@@ -1111,14 +1121,54 @@ async function fetchCatalog() {
     if (!r.ok) throw new Error('catalog')
     return await r.json()
   } catch {
-    return { products: [] }
+    return { site: {}, categories: [] }
   }
+}
+
+function normalizeCategories(catalog) {
+  if (Array.isArray(catalog.categories)) {
+    return catalog.categories.filter((c) => Array.isArray(c.products) && c.products.length)
+  }
+  // Compatibilidad con el modelo viejo (lista plana).
+  if (Array.isArray(catalog.products) && catalog.products.length) {
+    return [{ id: 'productos', label: 'Productos', emoji: '💄', products: catalog.products }]
+  }
+  return []
+}
+
+function renderCategoryTabs(container, categories, onSelect) {
+  if (!container) return
+  if (categories.length <= 1) {
+    container.innerHTML = ''
+    return
+  }
+  const tabs = [
+    { id: 'all', label: 'Todos', emoji: '✨' },
+    ...categories.map((c) => ({ id: c.id, label: c.label, emoji: c.emoji }))
+  ]
+  container.innerHTML = tabs
+    .map(
+      (t, i) =>
+        `<button type="button" class="store-cat${i === 0 ? ' is-active' : ''}" data-cat="${escapeHtml(t.id)}"><span class="store-cat__emoji">${escapeHtml(t.emoji || '')}</span>${escapeHtml(t.label)}</button>`
+    )
+    .join('')
+
+  container.querySelectorAll('.store-cat').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.store-cat').forEach((b) => b.classList.remove('is-active'))
+      btn.classList.add('is-active')
+      onSelect(btn.dataset.cat)
+    })
+  })
 }
 
 async function boot() {
   const catalog = await fetchCatalog()
+  const categories = normalizeCategories(catalog)
+  const allProducts = categories.flatMap((c) => c.products)
+
   const track = document.querySelector('.js-carousel-track')
-  renderProducts(track, catalog.products)
+  renderProducts(track, allProducts)
 
   const cart = new Cart()
   const slider = new Slider()
@@ -1126,6 +1176,18 @@ async function boot() {
   const carouselEl = document.querySelector('.js-carousel')
   const productCarousel = carouselEl ? new ProductCarousel(carouselEl) : null
   const quickView = new QuickView(cart, productCarousel)
+
+  const catsEl = document.querySelector('.js-store-cats')
+  const selectCategory = (catId) => {
+    const products =
+      catId === 'all'
+        ? allProducts
+        : categories.find((c) => c.id === catId)?.products || []
+    renderProducts(track, products)
+    quickView.setupProducts()
+    productCarousel?.reload()
+  }
+  renderCategoryTabs(catsEl, categories, selectCategory)
 
   window.__elegance = { cart, slider, productCarousel, quickView }
 }
