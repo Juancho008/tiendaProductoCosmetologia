@@ -299,32 +299,37 @@ function navHTML() {
 function productRowHTML(product, gi, si, pi) {
   const image = resolveImg(product.image) || ''
   const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="%231e0a0e"/></svg>')
-  const k = `${gi}-${si}-${pi}`
   return `
   <div class="product-row" data-gi="${gi}" data-si="${si}" data-pi="${pi}">
-    <div class="product-image">
+    <div class="product-media">
       <img src="${escapeHtml(thumb)}" alt="">
-      <label class="image-upload">📷 Foto
+      <label class="image-upload">📷 Cambiar foto
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-action="upload" data-gi="${gi}" data-si="${si}" data-pi="${pi}">
       </label>
     </div>
-    <label class="f-code">Código
-      <input type="text" value="${escapeHtml(product.code || '')}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="code" placeholder="000">
-    </label>
-    <label class="f-name">Nombre
-      <input type="text" value="${escapeHtml(product.name)}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="name">
-    </label>
-    <label class="f-price">Precio
-      <input type="number" min="0" step="1" value="${escapeHtml(product.price ?? 0)}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="price">
-    </label>
-    <label class="f-desc">Descripción
-      <textarea data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="description" placeholder="Descripción">${escapeHtml(product.description || '')}</textarea>
-    </label>
-    <label class="f-check">
-      <input type="checkbox" ${product.available !== false ? 'checked' : ''} data-action="toggle-available" data-gi="${gi}" data-si="${si}" data-pi="${pi}">
-      Disponible
-    </label>
-    <button type="button" class="btn-icon-danger" data-action="remove-product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" aria-label="Eliminar producto" title="Eliminar ${escapeHtml(product.name)}">✕</button>
+    <div class="product-fields">
+      <label class="f-name">Nombre
+        <input type="text" value="${escapeHtml(product.name)}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="name" placeholder="Ej: Serum facial">
+      </label>
+      <div class="product-fields-row">
+        <label class="f-price">Precio
+          <input type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(product.price ?? 0)}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="price" placeholder="0">
+        </label>
+        <label class="f-code">Código <span class="label-hint">(opcional)</span>
+          <input type="text" value="${escapeHtml(product.code || '')}" data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="code" placeholder="—">
+        </label>
+      </div>
+      <label class="f-desc">Descripción
+        <textarea data-kind="product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" data-field="description" placeholder="Breve descripción del producto">${escapeHtml(product.description || '')}</textarea>
+      </label>
+    </div>
+    <div class="product-row-actions">
+      <label class="f-check">
+        <input type="checkbox" ${product.available !== false ? 'checked' : ''} data-action="toggle-available" data-gi="${gi}" data-si="${si}" data-pi="${pi}">
+        Disponible
+      </label>
+      <button type="button" class="btn-remove" data-action="remove-product" data-gi="${gi}" data-si="${si}" data-pi="${pi}" aria-label="Eliminar producto">Eliminar</button>
+    </div>
   </div>`
 }
 

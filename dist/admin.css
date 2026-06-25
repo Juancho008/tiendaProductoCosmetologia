@@ -88,6 +88,13 @@ label {
   color: var(--muted);
 }
 
+.label-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.65rem;
+  opacity: 0.75;
+}
+
 input,
 textarea {
   font-family: "Jost", sans-serif;
@@ -430,6 +437,12 @@ textarea {
   text-align: left;
 }
 
+.section-toggle > span:first-child,
+.sub-toggle > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
 .section-toggle small,
 .sub-toggle small {
   font-family: "Jost", sans-serif;
@@ -554,49 +567,82 @@ textarea {
 .product-list {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.85rem;
 }
 
 .product-row {
   display: grid;
-  grid-template-columns: 4.5rem 5rem 1fr 7rem 8rem auto;
-  gap: 0.7rem;
-  align-items: end;
-  padding: 0.75rem;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 6px;
   background: rgba(30, 10, 14, 0.5);
 }
 
-.product-image {
-  grid-row: span 1;
+.product-media {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.45rem;
 }
 
-.product-image img {
-  width: 4.5rem;
-  height: 4.5rem;
+.product-media img {
+  width: 5.5rem;
+  height: 5.5rem;
   object-fit: cover;
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--surface);
 }
 
+.product-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.product-fields label {
+  min-width: 0;
+}
+
+.product-fields input,
+.product-fields textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
+.product-fields-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 7rem);
+  gap: 0.75rem;
+}
+
+.f-price input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.f-price input[type="number"]::-webkit-outer-spin-button,
+.f-price input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .image-upload {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.55rem;
-  letter-spacing: 0.08em;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: center;
-  padding: 0.3rem;
+  padding: 0.45rem 0.35rem;
   border: 1px solid var(--line);
   border-radius: 4px;
   cursor: pointer;
   color: var(--muted);
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .image-upload:hover {
@@ -608,40 +654,50 @@ textarea {
   display: none;
 }
 
-.f-desc {
-  grid-column: 2 / -1;
+.f-desc textarea {
+  min-height: 4.5rem;
 }
 
 .f-check {
   flex-direction: row;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   text-transform: none;
   letter-spacing: 0.04em;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--text);
 }
 
 .f-check input {
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 1.15rem;
+  height: 1.15rem;
   accent-color: var(--gold);
 }
 
-.btn-icon-danger {
-  align-self: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 4px;
-  border: 1px solid rgba(180, 60, 70, 0.4);
-  background: rgba(139, 41, 66, 0.2);
-  color: #f1b8c0;
-  cursor: pointer;
-  font-size: 0.9rem;
-  line-height: 1;
+.product-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-height: 5.5rem;
 }
 
-.btn-icon-danger:hover {
+.btn-remove {
+  font-family: "Jost", sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.5rem 0.65rem;
+  border-radius: 4px;
+  border: 1px solid rgba(180, 60, 70, 0.45);
+  background: rgba(139, 41, 66, 0.2);
+  color: #f1b8c0;
+  white-space: nowrap;
+}
+
+.btn-remove:hover {
   background: rgba(139, 41, 66, 0.45);
   border-color: #b43c46;
 }
@@ -677,11 +733,49 @@ textarea {
 @media (max-width: 960px) {
   .editor-body {
     grid-template-columns: 1fr;
+    padding: 1rem 1rem 6.5rem;
   }
 
   .editor-nav {
     position: static;
     max-height: none;
+    padding: 0.75rem;
+    overflow: hidden;
+  }
+
+  .editor-nav ul {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.45rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.15rem;
+    scrollbar-width: none;
+  }
+
+  .editor-nav ul::-webkit-scrollbar {
+    display: none;
+  }
+
+  .editor-nav li {
+    flex-shrink: 0;
+  }
+
+  .nav-btn {
+    white-space: nowrap;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.78rem;
+  }
+
+  .nav-btn.depth-1 {
+    padding-left: 0.9rem;
+    font-size: 0.76rem;
+  }
+
+  .nav-title {
+    margin-bottom: 0.65rem;
   }
 }
 
@@ -690,39 +784,213 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .product-row {
-    grid-template-columns: 4.5rem 1fr;
-    align-items: start;
-  }
-
-  .product-image {
-    grid-row: span 5;
-  }
-
-  .f-desc {
-    grid-column: 2 / -1;
-  }
-
-  .btn-icon-danger {
-    grid-column: 2;
-    justify-self: end;
-  }
-
-  .editor-toolbar {
-    top: 0;
-    position: static;
-  }
-
-  .editor-nav {
-    top: 0;
-  }
-
   .admin-header {
-    position: static;
+    position: sticky;
+    top: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 1rem;
   }
 
   .admin-header h1 {
-    font-size: 1.1rem;
-    letter-spacing: 0.15em;
+    font-size: 1.05rem;
+    letter-spacing: 0.12em;
+  }
+
+  .admin-header p {
+    display: none;
+  }
+
+  .admin-header .admin-actions {
+    justify-content: flex-end;
+  }
+
+  .editor-toolbar {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .toolbar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .toolbar-actions .btn-primary {
+    grid-column: 1 / -1;
+    min-height: 2.75rem;
+  }
+
+  .toolbar-actions .btn {
+    min-height: 2.5rem;
+  }
+
+  .editor-body {
+    padding: 0.85rem 1rem 7rem;
+  }
+
+  .section-toggle,
+  .sub-toggle {
+    padding: 0.95rem 1rem;
+    font-size: 1rem;
+    gap: 0.65rem;
+  }
+
+  .section-toggle small,
+  .sub-toggle small {
+    display: block;
+    margin: 0.2rem 0 0;
+  }
+
+  .section-body {
+    padding: 0 1rem 1.25rem;
+  }
+
+  .subcategory .section-body {
+    padding: 0 0.85rem 1rem;
+  }
+
+  .sub-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .group-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .emoji-field {
+    width: 100%;
+    max-width: 6rem;
+  }
+
+  .btn-toggle {
+    align-self: flex-start;
+    min-height: 2.5rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.68rem;
+  }
+
+  .products-head .btn {
+    min-height: 2.5rem;
+    padding: 0.55rem 1rem;
+  }
+
+  input,
+  textarea {
+    font-size: 16px;
+    min-height: 2.75rem;
+    padding: 0.75rem 0.85rem;
+  }
+
+  textarea {
+    min-height: 5.5rem;
+  }
+
+  .product-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    min-width: 0;
+  }
+
+  .product-media {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .product-media img {
+    width: 5rem;
+    height: 5rem;
+    flex-shrink: 0;
+  }
+
+  .image-upload {
+    flex: 1;
+    min-height: 2.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.72rem;
+  }
+
+  .product-fields-row {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .f-code .label-hint {
+    display: inline;
+    margin-left: 0.25rem;
+  }
+
+  .product-row-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 0;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .f-check {
+    font-size: 0.9rem;
+  }
+
+  .f-check input {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .btn-remove {
+    min-height: 2.75rem;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.72rem;
+  }
+
+  .savebar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    padding-bottom: max(0.85rem, env(safe-area-inset-bottom));
+  }
+
+  .savebar span {
+    text-align: center;
+    font-size: 0.72rem;
+  }
+
+  .savebar .btn {
+    width: 100%;
+    min-height: 2.85rem;
+    font-size: 0.78rem;
+  }
+
+  .admin-message {
+    left: 1rem;
+    right: 1rem;
+    transform: translateY(1rem);
+    text-align: center;
+  }
+
+  .admin-message.is-visible {
+    transform: translateY(0);
+  }
+
+  .login-screen {
+    padding: 1.25rem;
+  }
+
+  .login-card {
+    padding: 2rem 1.25rem;
   }
 }
