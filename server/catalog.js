@@ -27,16 +27,18 @@ function sanitizeProduct(raw, index, categoryId) {
   };
 }
 
+function resolveGroupId(raw, group) {
+  if (!group) return undefined;
+  if (raw?.groupId) return String(raw.groupId).trim();
+  return slugify(group);
+}
+
 function sanitizeCategory(raw, index) {
   const label = String(raw?.label || "").trim() || "Sin nombre";
   const id =
     (raw?.id && String(raw.id).trim()) || slugify(label) || `cat-${index + 1}`;
   const group = raw?.group ? String(raw.group).trim() : undefined;
-  const groupId = group
-    ? raw?.groupId
-      ? String(raw.groupId).trim()
-      : slugify(group)
-    : undefined;
+  const groupId = resolveGroupId(raw, group);
   const products = Array.isArray(raw?.products) ? raw.products : [];
   return {
     id,
@@ -48,6 +50,28 @@ function sanitizeCategory(raw, index) {
     order: Number(raw?.order) || index + 1,
     products: products.map((p, i) => sanitizeProduct(p, i, id)),
   };
+}
+
+function resolveCategories(raw) {
+  if (Array.isArray(raw?.categories)) {
+    return raw.categories.map(sanitizeCategory);
+  }
+
+  if (!Array.isArray(raw?.products)) return [];
+
+  return [
+    sanitizeCategory(
+      {
+        id: "productos",
+        label: "Productos",
+        emoji: "💄",
+        enabled: true,
+        order: 1,
+        products: raw.products,
+      },
+      0
+    ),
+  ];
 }
 
 /** Acepta el modelo nuevo (categories) o el viejo (products planos) y devuelve siempre el nuevo. */
@@ -62,28 +86,11 @@ export function sanitizeCatalog(raw) {
     ).replace(/[^0-9]/g, ""),
   };
 
-  let categories;
-  if (Array.isArray(raw?.categories)) {
-    categories = raw.categories.map(sanitizeCategory);
-  } else if (Array.isArray(raw?.products)) {
-    categories = [
-      sanitizeCategory(
-        {
-          id: "productos",
-          label: "Productos",
-          emoji: "💄",
-          enabled: true,
-          order: 1,
-          products: raw.products,
-        },
-        0
-      ),
-    ];
-  } else {
-    categories = [];
-  }
-
-  return { site, categories, generatedAt: new Date().toISOString() };
+  return {
+    site,
+    categories: resolveCategories(raw),
+    generatedAt: new Date().toISOString(),
+  };
 }
 
 /** Versión pública: solo categorías habilitadas y productos disponibles. */

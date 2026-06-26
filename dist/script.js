@@ -83,9 +83,13 @@ class Cart {
     const existing = this.items.find((item) => item.id === product.id)
     if (existing) {
       existing.qty += 1
-    } else {
-      this.items.push({ ...product, qty: 1 })
+      this.save()
+      this.render()
+      this.bumpBadge()
+      return
     }
+
+    this.items.push({ ...product, qty: 1 })
     this.save()
     this.render()
     this.bumpBadge()
@@ -330,11 +334,9 @@ class Slider {
     if (this.data.current === this.data.total) {
       this.scrollHint.textContent = 'Subir'
       TweenMax.set(this.scrollHint, { autoAlpha: 0.55 })
-    } else if (this.data.current === 0) {
-      this.scrollHint.textContent = 'Deslizar'
-    } else {
-      this.scrollHint.textContent = 'Deslizar'
+      return
     }
+    this.scrollHint.textContent = 'Deslizar'
   }
 
   cameraSetup() {
@@ -449,7 +451,9 @@ class Slider {
 
     if (this.isStoreSlide(slide)) {
       const showcase = slide.querySelector('.js-store-showcase')
-      if (showcase) TweenMax.set(showcase, { autoAlpha: 1, y: 0, clearProps: 'transform' })
+      if (showcase) {
+        TweenMax.set(showcase, { autoAlpha: 1, y: 0, clearProps: 'transform' })
+      }
     } else {
       const images = this.getForegroundImages(slide)
       TweenMax.set(images, { autoAlpha: 1, yPercent: 0, scaleY: 1, clearProps: 'transform' })
@@ -503,28 +507,98 @@ class Slider {
     this.mat.uniforms.texture1.value = this.textures[fromIndex]
     this.mat.uniforms.texture2.value = this.textures[toIndex]
 
+    const onComplete = () => {
+      this.syncBgTextures(landedIndex)
+      this.render()
+    }
+
     if (reverse) {
       this.mat.uniforms.dispPower.value = 1
       this.bgTween = TweenMax.to(this.mat.uniforms.dispPower, 3.2, {
         value: 0,
         ease: easeFlow,
         onUpdate: this.render,
-        onComplete: () => {
-          this.syncBgTextures(landedIndex)
-          this.render()
-        }
+        onComplete
       })
-    } else {
-      this.bgTween = TweenMax.to(this.mat.uniforms.dispPower, 3.2, {
-        value: 1,
-        ease: easeFlow,
-        onUpdate: this.render,
-        onComplete: () => {
-          this.syncBgTextures(landedIndex)
-          this.render()
-        }
-      })
+      return
     }
+
+    this.bgTween = TweenMax.to(this.mat.uniforms.dispPower, 3.2, {
+      value: 1,
+      ease: easeFlow,
+      onUpdate: this.render,
+      onComplete
+    })
+  }
+
+  animateLeavingContent(tl, opts) {
+    const { leaving, leavingIsStore, leavingImages, leavingText, isForward, dur, easeFlow } = opts
+    const exitY = isForward ? -145 : 145
+
+    if (leavingIsStore) {
+      const leavingShowcase = leaving.querySelector('.js-store-showcase')
+      tl.to(leavingShowcase, 1.7, {
+        autoAlpha: 0,
+        y: isForward ? -28 : 28,
+        ease: easeFlow
+      }, 0)
+    } else {
+      tl.staggerTo(leavingImages, dur.image, {
+        yPercent: exitY,
+        scaleY: 1.1,
+        ease: easeFlow
+      }, 0.07, 0)
+    }
+
+    if (!leavingText.length) return
+    tl.staggerTo(leavingText, dur.text, {
+      yPercent: isForward ? -100 : 100,
+      ease: easeFlow
+    }, 0.07, 0)
+  }
+
+  animateEnteringContent(tl, opts) {
+    const {
+      entering,
+      enteringIsStore,
+      enteringImages,
+      enteringText,
+      isForward,
+      switchAt,
+      dur,
+      easeOut
+    } = opts
+    const enterFromY = isForward ? 145 : -145
+
+    if (enteringText.length) {
+      tl.staggerFromTo(enteringText, dur.text, {
+        yPercent: isForward ? 100 : -100
+      }, {
+        yPercent: 0,
+        ease: easeOut
+      }, 0.07, switchAt + 0.25)
+    }
+
+    if (enteringIsStore) {
+      const enteringShowcase = entering.querySelector('.js-store-showcase')
+      TweenMax.set(enteringShowcase, { autoAlpha: 0, y: isForward ? 32 : -32 })
+      tl.to(enteringShowcase, 2, {
+        autoAlpha: 1,
+        y: 0,
+        ease: easeOut
+      }, switchAt + 0.2)
+      return
+    }
+
+    TweenMax.set(enteringImages, { autoAlpha: 1 })
+    tl.staggerFromTo(enteringImages, dur.image, {
+      yPercent: enterFromY,
+      scaleY: 1.1
+    }, {
+      yPercent: 0,
+      scaleY: 1,
+      ease: easeOut
+    }, 0.07, switchAt + 0.2)
   }
 
   animateSlideChange(leaving, entering, direction) {
@@ -540,8 +614,6 @@ class Slider {
     const enteringIsStore = this.isStoreSlide(entering)
     const leavingText = leaving.querySelectorAll('.js-slider__text-line div')
     const enteringText = entering.querySelectorAll('.js-slider__text-line div')
-    const leavingTitle = leaving.querySelector('.js-store-title')
-    const enteringTitle = entering.querySelector('.js-store-title')
 
     const leaveIdx = this.slides.indexOf(leaving)
     const enterIdx = this.slides.indexOf(entering)
@@ -551,9 +623,6 @@ class Slider {
     const enterBulletTxt = enterBullet.querySelectorAll('.js-slider-bullet__text')
     const leaveBulletLine = leaveBullet.querySelectorAll('.js-slider-bullet__line')
     const enterBulletLine = enterBullet.querySelectorAll('.js-slider-bullet__line')
-
-    const exitY = isForward ? -145 : 145
-    const enterFromY = isForward ? 145 : -145
 
     const tl = new TimelineMax({
       paused: true,
@@ -571,64 +640,33 @@ class Slider {
       this.state.initial = false
     }
 
-    if (leavingIsStore) {
-      const leavingShowcase = leaving.querySelector('.js-store-showcase')
-      tl.to(leavingShowcase, 1.7, {
-        autoAlpha: 0,
-        y: isForward ? -28 : 28,
-        ease: easeFlow
-      }, 0)
-    } else {
-      tl.staggerTo(leavingImages, dur.image, {
-        yPercent: exitY,
-        scaleY: 1.1,
-        ease: easeFlow
-      }, 0.07, 0)
-    }
+    this.animateLeavingContent(tl, {
+      leaving,
+      leavingIsStore,
+      leavingImages,
+      leavingText,
+      isForward,
+      dur,
+      easeFlow
+    })
 
     tl.to(leaveBulletTxt, dur.bullet, { alpha: 0.25, ease: easeFlow }, 0)
     tl.set(leaveBulletLine, { transformOrigin: 'right' }, 0)
     tl.to(leaveBulletLine, dur.bullet, { scaleX: 0, ease: easeFlow }, 0)
 
-    if (leavingText.length) {
-      tl.staggerTo(leavingText, dur.text, {
-        yPercent: isForward ? -100 : 100,
-        ease: easeFlow
-      }, 0.07, 0)
-    }
-
     tl.set(leaving, { autoAlpha: 0 }, switchAt)
     tl.set(entering, { autoAlpha: 1 }, switchAt)
 
-    if (enteringText.length) {
-      tl.staggerFromTo(enteringText, dur.text, {
-        yPercent: isForward ? 100 : -100
-      }, {
-        yPercent: 0,
-        ease: easeOut
-      }, 0.07, switchAt + 0.25)
-    }
-
-    if (enteringIsStore) {
-      const enteringShowcase = entering.querySelector('.js-store-showcase')
-      TweenMax.set(enteringShowcase, { autoAlpha: 0, y: isForward ? 32 : -32 })
-
-      tl.to(enteringShowcase, 2, {
-        autoAlpha: 1,
-        y: 0,
-        ease: easeOut
-      }, switchAt + 0.2)
-    } else {
-      TweenMax.set(enteringImages, { autoAlpha: 1 })
-      tl.staggerFromTo(enteringImages, dur.image, {
-        yPercent: enterFromY,
-        scaleY: 1.1
-      }, {
-        yPercent: 0,
-        scaleY: 1,
-        ease: easeOut
-      }, 0.07, switchAt + 0.2)
-    }
+    this.animateEnteringContent(tl, {
+      entering,
+      enteringIsStore,
+      enteringImages,
+      enteringText,
+      isForward,
+      switchAt,
+      dur,
+      easeOut
+    })
 
     tl.to(enterBulletTxt, dur.bullet, { alpha: 1, ease: easeFlow }, switchAt)
     tl.set(enterBulletLine, { transformOrigin: 'left' }, switchAt)
@@ -658,10 +696,10 @@ class Slider {
 
     if (direction === 'forward') {
       this.transitionNext(oldCurrent, newCurrent)
-    } else {
-      this.transitionPrev(oldCurrent, newCurrent)
+      return true
     }
 
+    this.transitionPrev(oldCurrent, newCurrent)
     return true
   }
 
@@ -684,9 +722,13 @@ class Slider {
   }
 
   goToSlide(index) {
-    if (this.state.animating || index === this.data.current) return
-    if (index > this.data.current) this.nextSlide()
-    else this.prevSlide()
+    if (this.state.animating) return
+    if (index === this.data.current) return
+    if (index > this.data.current) {
+      this.nextSlide()
+      return
+    }
+    this.prevSlide()
   }
 
   onWheel(e) {
@@ -695,10 +737,12 @@ class Slider {
     if (e.deltaY > 0) {
       if (this.data.current >= this.data.total) return
       this.nextSlide()
-    } else if (e.deltaY < 0) {
-      if (this.data.current <= 0) return
-      this.prevSlide()
+      return
     }
+
+    if (e.deltaY >= 0) return
+    if (this.data.current <= 0) return
+    this.prevSlide()
   }
 
   onTouchStart(e) {
@@ -722,10 +766,11 @@ class Slider {
     if (deltaY > 0) {
       if (this.data.current >= this.data.total) return
       this.nextSlide()
-    } else {
-      if (this.data.current <= 0) return
-      this.prevSlide()
+      return
     }
+
+    if (this.data.current <= 0) return
+    this.prevSlide()
   }
 
   onResize() {
@@ -945,14 +990,16 @@ class ProductCarousel {
     this.viewport.addEventListener('touchend', (e) => {
       if (!this.swipe.active) return
       this.swipe.active = false
+
       const dx = e.changedTouches[0].clientX - this.swipe.x
       const dy = e.changedTouches[0].clientY - this.swipe.y
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) this.next(true)
-        else this.prev(true)
-      } else {
+      if (Math.abs(dx) <= 40 || Math.abs(dx) <= Math.abs(dy)) {
         this.startAutoplay()
+        return
       }
+
+      if (dx < 0) this.next(true)
+      else this.prev(true)
     }, { passive: true })
 
     window.addEventListener('resize', () => this.onResize())
@@ -1129,11 +1176,10 @@ function normalizeCategories(catalog) {
   if (Array.isArray(catalog.categories)) {
     return catalog.categories.filter((c) => Array.isArray(c.products) && c.products.length)
   }
-  // Compatibilidad con el modelo viejo (lista plana).
-  if (Array.isArray(catalog.products) && catalog.products.length) {
-    return [{ id: 'productos', label: 'Productos', emoji: '💄', products: catalog.products }]
+  if (!Array.isArray(catalog.products) || !catalog.products.length) {
+    return []
   }
-  return []
+  return [{ id: 'productos', label: 'Productos', emoji: '💄', products: catalog.products }]
 }
 
 function renderCategoryTabs(container, categories, onSelect) {

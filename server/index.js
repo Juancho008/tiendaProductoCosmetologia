@@ -44,7 +44,7 @@ function requireAuth(req, res, next) {
   if (token !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: "No autorizado" });
   }
-  next();
+  return next();
 }
 
 const storage = multer.diskStorage({
@@ -76,7 +76,7 @@ app.post("/api/admin/login", (req, res) => {
   if (password !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: "Contraseña incorrecta" });
   }
-  res.json({ token: ADMIN_PASSWORD });
+  return res.json({ token: ADMIN_PASSWORD });
 });
 
 app.get("/api/admin/catalog", requireAuth, (req, res) => {
@@ -93,7 +93,7 @@ app.post("/api/admin/upload", requireAuth, (req, res) => {
   upload.single("image")(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: "No se recibió ninguna imagen" });
-    res.json({ url: `/uploads/${req.file.filename}` });
+    return res.json({ url: `/uploads/${req.file.filename}` });
   });
 });
 

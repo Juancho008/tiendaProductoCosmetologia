@@ -64,14 +64,15 @@ function catalogToGroups(catalog) {
         groupsMap.set(parentId, { id: parentId, label: cat.group, subcategories: [] })
       }
       groupsMap.get(parentId).subcategories.push(clone)
-    } else {
-      const id = cat.groupId || slugify(cat.label) || cat.id
-      groupsMap.set(id + '::' + cat.id, {
-        id: id,
-        label: cat.label,
-        subcategories: [clone]
-      })
+      continue
     }
+
+    const id = cat.groupId || slugify(cat.label) || cat.id
+    groupsMap.set(id + '::' + cat.id, {
+      id,
+      label: cat.label,
+      subcategories: [clone]
+    })
   }
   return {
     site: JSON.parse(JSON.stringify(catalog?.site || {})),
@@ -469,143 +470,159 @@ function renderEditor() {
   if (pendingScroll) {
     const el = document.getElementById('editor-' + pendingScroll)
     pendingScroll = null
-    if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    if (!el) return
+    requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 }
 
 // ---------- Eventos ----------
 
-function bindRoot() {
-  root.addEventListener('input', (e) => {
-    const t = e.target
-    if (t.dataset.site) {
-      state.site = state.site || {}
-      state.site[t.dataset.site] = t.value
-      return
-    }
-    const gi = Number(t.dataset.gi)
-    const si = Number(t.dataset.si)
-    const pi = Number(t.dataset.pi)
-    const field = t.dataset.field
-    if (!t.dataset.kind || !field) return
-    if (t.dataset.kind === 'group') {
-      state.groups[gi][field] = t.value
-    } else if (t.dataset.kind === 'sub') {
-      state.groups[gi].subcategories[si][field] = t.value
-    } else if (t.dataset.kind === 'product') {
-      const product = state.groups[gi].subcategories[si].products[pi]
-      if (!product) return
-      product[field] = field === 'price' ? Number(t.value) || 0 : t.value
-    }
-  })
+function handleSiteInput(field, value) {
+  state.site = state.site || {}
+  state.site[field] = value
+}
 
-  root.addEventListener('change', (e) => {
-    const t = e.target
-    const action = t.dataset.action
-    if (action === 'toggle-available') {
-      const p = state.groups[Number(t.dataset.gi)]?.subcategories[Number(t.dataset.si)]?.products[Number(t.dataset.pi)]
-      if (p) p.available = t.checked
-    } else if (action === 'upload' && t.files && t.files[0]) {
-      uploadImage(Number(t.dataset.gi), Number(t.dataset.si), Number(t.dataset.pi), t.files[0])
-      t.value = ''
-    }
+function handleProductInput(gi, si, pi, field, value) {
+  const product = state.groups[gi]?.subcategories[si]?.products[pi]
+  if (!product) return
+  product[field] = field === 'price' ? Number(value) || 0 : value
+}
+
+function handleEditorInput(t) {
+  if (t.dataset.site) {
+    handleSiteInput(t.dataset.site, t.value)
+    return
+  }
+
+  const field = t.dataset.field
+  if (!t.dataset.kind || !field) return
+
+  const gi = Number(t.dataset.gi)
+  const si = Number(t.dataset.si)
+  const pi = Number(t.dataset.pi)
+
+  if (t.dataset.kind === 'group') {
+    state.groups[gi][field] = t.value
+    return
+  }
+  if (t.dataset.kind === 'sub') {
+    state.groups[gi].subcategories[si][field] = t.value
+    return
+  }
+  if (t.dataset.kind === 'product') {
+    handleProductInput(gi, si, pi, field, t.value)
+  }
+}
+
+function handleEditorChange(t) {
+  const action = t.dataset.action
+  if (action === 'toggle-available') {
+    const p = state.groups[Number(t.dataset.gi)]?.subcategories[Number(t.dataset.si)]?.products[Number(t.dataset.pi)]
+    if (!p) return
+    p.available = t.checked
+    return
+  }
+  if (action !== 'upload' || !t.files?.[0]) return
+  uploadImage(Number(t.dataset.gi), Number(t.dataset.si), Number(t.dataset.pi), t.files[0])
+  t.value = ''
+}
+
+function expandAllSections() {
+  const all = new Set(['site'])
+  state.groups.forEach((g, i) => {
+    all.add(sectionId(i))
+    g.subcategories.forEach((_, j) => all.add(sectionId(i, j)))
   })
+  expanded = all
+  renderEditor()
+}
+
+function toggleSection(id) {
+  if (expanded.has(id)) expanded.delete(id)
+  else expanded.add(id)
+  renderEditor()
+}
+
+function navigateToSection(id) {
+  activeNav = id
+  expanded.add(id)
+  const m = id.match(/^g-(\d+)/)
+  if (m) expanded.add(`g-${m[1]}`)
+  pendingScroll = id
+  renderEditor()
+}
+
+function removeGroup(gi) {
+  if (!confirm('¿Eliminar esta categoría y todas sus subcategorías?')) return
+  state.groups.splice(gi, 1)
+  renderEditor()
+}
+
+function removeSubcategory(gi, si) {
+  if (state.groups[gi].subcategories.length <= 1) return
+  state.groups[gi].subcategories.splice(si, 1)
+  renderEditor()
+}
+
+function handleEditorClick(btn) {
+  const action = btn.dataset.action
+  const gi = Number(btn.dataset.gi)
+  const si = Number(btn.dataset.si)
+  const pi = Number(btn.dataset.pi)
+
+  if (action === 'logout') return logout()
+  if (action === 'save') return saveCatalog()
+  if (action === 'expand-all') return expandAllSections()
+  if (action === 'collapse-all') {
+    expanded = new Set()
+    return renderEditor()
+  }
+  if (action === 'toggle-section') return toggleSection(btn.dataset.id)
+  if (action === 'nav') return navigateToSection(btn.dataset.id)
+  if (action === 'add-group') {
+    state.groups.push(emptyGroup())
+    expanded.add(sectionId(state.groups.length - 1))
+    return renderEditor()
+  }
+  if (action === 'remove-group') return removeGroup(gi)
+  if (action === 'toggle-group') {
+    const g = state.groups[gi]
+    const allEnabled = g.subcategories.every((s) => s.enabled !== false)
+    g.subcategories.forEach((s) => { s.enabled = !allEnabled })
+    return renderEditor()
+  }
+  if (action === 'add-sub') {
+    state.groups[gi].subcategories.push(emptySubcategory(state.groups[gi].id))
+    expanded.add(sectionId(gi, state.groups[gi].subcategories.length - 1))
+    return renderEditor()
+  }
+  if (action === 'remove-sub') return removeSubcategory(gi, si)
+  if (action === 'toggle-sub') {
+    const s = state.groups[gi].subcategories[si]
+    s.enabled = s.enabled === false
+    return renderEditor()
+  }
+  if (action === 'add-product') {
+    const sub = state.groups[gi].subcategories[si]
+    sub.products.push(emptyProduct(sub.id))
+    expanded.add(sectionId(gi)).add(sectionId(gi, si))
+    return renderEditor()
+  }
+  if (action === 'remove-product') {
+    state.groups[gi].subcategories[si].products.splice(pi, 1)
+    renderEditor()
+  }
+}
+
+function bindRoot() {
+  root.addEventListener('input', (e) => handleEditorInput(e.target))
+
+  root.addEventListener('change', (e) => handleEditorChange(e.target))
 
   root.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action]')
     if (!btn) return
-    const action = btn.dataset.action
-    const gi = Number(btn.dataset.gi)
-    const si = Number(btn.dataset.si)
-    const pi = Number(btn.dataset.pi)
-
-    switch (action) {
-      case 'logout':
-        logout()
-        break
-      case 'save':
-        saveCatalog()
-        break
-      case 'expand-all': {
-        const all = new Set(['site'])
-        state.groups.forEach((g, i) => {
-          all.add(sectionId(i))
-          g.subcategories.forEach((_, j) => all.add(sectionId(i, j)))
-        })
-        expanded = all
-        renderEditor()
-        break
-      }
-      case 'collapse-all':
-        expanded = new Set()
-        renderEditor()
-        break
-      case 'toggle-section': {
-        const id = btn.dataset.id
-        if (expanded.has(id)) expanded.delete(id)
-        else expanded.add(id)
-        renderEditor()
-        break
-      }
-      case 'nav': {
-        const id = btn.dataset.id
-        activeNav = id
-        expanded.add(id)
-        const m = id.match(/^g-(\d+)/)
-        if (m) expanded.add(`g-${m[1]}`)
-        pendingScroll = id
-        renderEditor()
-        break
-      }
-      case 'add-group':
-        state.groups.push(emptyGroup())
-        expanded.add(sectionId(state.groups.length - 1))
-        renderEditor()
-        break
-      case 'remove-group':
-        if (confirm('¿Eliminar esta categoría y todas sus subcategorías?')) {
-          state.groups.splice(gi, 1)
-          renderEditor()
-        }
-        break
-      case 'toggle-group': {
-        const g = state.groups[gi]
-        const allEnabled = g.subcategories.every((s) => s.enabled !== false)
-        g.subcategories.forEach((s) => { s.enabled = !allEnabled })
-        renderEditor()
-        break
-      }
-      case 'add-sub':
-        state.groups[gi].subcategories.push(emptySubcategory(state.groups[gi].id))
-        expanded.add(sectionId(gi, state.groups[gi].subcategories.length - 1))
-        renderEditor()
-        break
-      case 'remove-sub':
-        if (state.groups[gi].subcategories.length > 1) {
-          state.groups[gi].subcategories.splice(si, 1)
-          renderEditor()
-        }
-        break
-      case 'toggle-sub': {
-        const s = state.groups[gi].subcategories[si]
-        s.enabled = s.enabled === false
-        renderEditor()
-        break
-      }
-      case 'add-product': {
-        const sub = state.groups[gi].subcategories[si]
-        sub.products.push(emptyProduct(sub.id))
-        expanded.add(sectionId(gi)).add(sectionId(gi, si))
-        renderEditor()
-        break
-      }
-      case 'remove-product':
-        state.groups[gi].subcategories[si].products.splice(pi, 1)
-        renderEditor()
-        break
-      default:
-        break
-    }
+    handleEditorClick(btn)
   })
 }
 
