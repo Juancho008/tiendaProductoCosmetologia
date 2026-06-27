@@ -1224,12 +1224,38 @@ function applyHeroImages(catalog) {
   })
 }
 
+function renderEmphasis(text) {
+  return escapeHtml(text).replace(/\*([^*]+)\*/g, '<em>$1</em>')
+}
+
+function applyHeroTexts(catalog) {
+  const slides = catalog?.site?.slides
+  if (Array.isArray(slides)) {
+    document.querySelectorAll('.js-slider__text').forEach((textEl, i) => {
+      const lines = slides[i]?.lines
+      if (!Array.isArray(lines)) return
+      textEl.querySelectorAll('.js-slider__text-line > div').forEach((div, j) => {
+        if (lines[j] == null) return
+        div.innerHTML = renderEmphasis(lines[j])
+      })
+    })
+  }
+
+  const side = catalog?.site?.sideText
+  const span = document.querySelector('.vert-text span')
+  if (!side || !span) return
+  span.innerHTML = side.subtitle
+    ? `${escapeHtml(side.title)}<br>${escapeHtml(side.subtitle)}`
+    : escapeHtml(side.title)
+}
+
 async function boot() {
   const catalog = await fetchCatalog()
   const categories = normalizeCategories(catalog)
   const allProducts = categories.flatMap((c) => c.products)
 
   applyHeroImages(catalog)
+  applyHeroTexts(catalog)
 
   const track = document.querySelector('.js-carousel-track')
   renderProducts(track, allProducts)

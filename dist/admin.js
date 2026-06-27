@@ -440,6 +440,20 @@ function siteSectionHTML() {
   const site = state.site || {}
   const hero = Array.isArray(site.heroImages) ? site.heroImages : []
   const heroLabels = ['Portada 1 · izquierda', 'Portada 1 · derecha', 'Portada 2 · izquierda', 'Portada 2 · derecha']
+  const slides = Array.isArray(site.slides) ? site.slides : []
+  const sideText = site.sideText || {}
+  const slideTitles = ['Portada 1', 'Portada 2']
+  const slidesHTML = slideTitles.map((title, si) => {
+    const lines = slides[si]?.lines || []
+    const inputs = [0, 1, 2, 3].map((li) =>
+      `<input type="text" value="${escapeHtml(lines[li] || '')}" data-slide="${si}" data-line="${li}" placeholder="Línea ${li + 1}">`
+    ).join('')
+    return `
+    <div class="text-slot">
+      <span class="text-slot-label">${title}</span>
+      <div class="text-lines">${inputs}</div>
+    </div>`
+  }).join('')
   const body = !open ? '' : `
     <div class="section-body">
       <div class="grid-2">
@@ -457,6 +471,28 @@ function siteSectionHTML() {
         </div>
         <div class="hero-grid">
           ${heroLabels.map((label, i) => heroSlotHTML(label, i, hero[i])).join('')}
+        </div>
+      </div>
+      <div class="hero-block">
+        <div class="hero-block-head">
+          <span class="hero-block-title">✍️ Textos de portada</span>
+          <span class="hero-block-hint">Encerrá una palabra entre *asteriscos* para resaltarla en dorado</span>
+        </div>
+        <div class="text-grid">
+          ${slidesHTML}
+        </div>
+      </div>
+      <div class="hero-block">
+        <div class="hero-block-head">
+          <span class="hero-block-title">📐 Texto lateral</span>
+        </div>
+        <div class="grid-2">
+          <label>Título
+            <input type="text" value="${escapeHtml(sideText.title || '')}" data-sidetext="title" placeholder="Beauty">
+          </label>
+          <label>Subtítulo <span class="label-hint">(opcional)</span>
+            <input type="text" value="${escapeHtml(sideText.subtitle || '')}" data-sidetext="subtitle" placeholder="Colección Bordó">
+          </label>
         </div>
       </div>
     </div>`
@@ -529,6 +565,20 @@ function handleSiteInput(field, value) {
   state.site[field] = value
 }
 
+function handleSlideInput(si, li, value) {
+  state.site = state.site || {}
+  if (!Array.isArray(state.site.slides)) state.site.slides = []
+  if (!state.site.slides[si]) state.site.slides[si] = { lines: [] }
+  if (!Array.isArray(state.site.slides[si].lines)) state.site.slides[si].lines = []
+  state.site.slides[si].lines[li] = value
+}
+
+function handleSideTextInput(field, value) {
+  state.site = state.site || {}
+  state.site.sideText = state.site.sideText || {}
+  state.site.sideText[field] = value
+}
+
 function handleProductInput(gi, si, pi, field, value) {
   const product = state.groups[gi]?.subcategories[si]?.products[pi]
   if (!product) return
@@ -538,6 +588,14 @@ function handleProductInput(gi, si, pi, field, value) {
 function handleEditorInput(t) {
   if (t.dataset.site) {
     handleSiteInput(t.dataset.site, t.value)
+    return
+  }
+  if (t.dataset.slide != null && t.dataset.line != null) {
+    handleSlideInput(Number(t.dataset.slide), Number(t.dataset.line), t.value)
+    return
+  }
+  if (t.dataset.sidetext) {
+    handleSideTextInput(t.dataset.sidetext, t.value)
     return
   }
 

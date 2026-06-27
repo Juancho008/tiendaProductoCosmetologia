@@ -475,6 +475,31 @@ textarea {
   width: 100%;
 }
 
+.text-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.text-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.text-slot-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.text-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 /* Collapsible sections */
 .section {
   padding: 0;
@@ -853,6 +878,10 @@ textarea {
   .hero-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.7rem;
+  }
+
+  .text-grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-header {

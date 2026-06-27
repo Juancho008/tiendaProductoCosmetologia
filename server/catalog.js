@@ -26,6 +26,32 @@ function sanitizeHeroImages(raw) {
   });
 }
 
+// Textos de los slides de portada. Usar *palabra* para resaltar en dorado.
+export const DEFAULT_SLIDES = [
+  { lines: ["Productos de", "belleza y *Nutrición.*", "Cuidado integral", "para *ti.*"] },
+  { lines: ["Capacitación y", "*Ventas.* Impulsa", "tu camino hacia", "el *éxito.*"] },
+];
+
+export const DEFAULT_SIDE_TEXT = { title: "Beauty", subtitle: "Colección Bordó" };
+
+function sanitizeSlides(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return DEFAULT_SLIDES.map((def, i) => {
+    const src = list[i];
+    if (!src || !Array.isArray(src.lines)) return { lines: [...def.lines] };
+    const lines = def.lines.map((_, j) => String(src.lines[j] ?? "").slice(0, 80));
+    return { lines };
+  });
+}
+
+function sanitizeSideText(raw) {
+  const src = raw || {};
+  return {
+    title: String(src.title ?? DEFAULT_SIDE_TEXT.title).slice(0, 60),
+    subtitle: String(src.subtitle ?? DEFAULT_SIDE_TEXT.subtitle).slice(0, 60),
+  };
+}
+
 function sanitizeProduct(raw, index, categoryId) {
   const id =
     raw && raw.id && String(raw.id).trim()
@@ -101,6 +127,8 @@ export function sanitizeCatalog(raw) {
       raw?.site?.whatsappNumber || raw?.whatsappNumber || ""
     ).replace(/[^0-9]/g, ""),
     heroImages: sanitizeHeroImages(raw?.site?.heroImages),
+    slides: sanitizeSlides(raw?.site?.slides),
+    sideText: sanitizeSideText(raw?.site?.sideText),
   };
 
   return {
