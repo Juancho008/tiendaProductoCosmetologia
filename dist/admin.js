@@ -266,6 +266,27 @@ async function uploadClientImage(ci, file) {
   renderEditor()
 }
 
+async function uploadCourseImage(ci, file) {
+  const course = state.site?.courses?.[ci]
+  if (!course) return
+  const form = new FormData()
+  form.append('image', file)
+  showMessage('Subiendo imagen…')
+  const r = await fetch(apiUrl('/api/admin/upload'), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form
+  })
+  const data = await r.json().catch(() => ({}))
+  if (!r.ok) {
+    showMessage(data.error || 'No se pudo subir la imagen', true)
+    return
+  }
+  course.image = data.url
+  showMessage('Imagen del curso actualizada')
+  renderEditor()
+}
+
 // ---------- IDs de sección ----------
 
 function sectionId(gi, si) {
@@ -580,30 +601,65 @@ function clientsPanelHTML() {
   </section>`
 }
 
+function coursesCount() {
+  return Array.isArray(state.site?.courses) ? state.site.courses.length : 0
+}
+
+function courseCardHTML(course, ci) {
+  const image = resolveImg(course.image) || ''
+  const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="100"><rect width="160" height="100" fill="%231e0a0e"/></svg>')
+  return `
+  <div class="client-card-edit" data-coi="${ci}">
+    <label class="client-photo client-photo--wide">
+      <img src="${escapeHtml(thumb)}" alt="">
+      <span class="client-photo__btn">📷 Cambiar imagen</span>
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-action="upload-course" data-coi="${ci}">
+    </label>
+    <div class="client-card-edit__fields">
+      <label>Título
+        <input type="text" value="${escapeHtml(course.title || '')}" data-course="${ci}" data-cofield="title" placeholder="Ej: Maquillaje profesional">
+      </label>
+      <label>Descripción
+        <textarea data-course="${ci}" data-cofield="description" placeholder="Descripción del curso">${escapeHtml(course.description || '')}</textarea>
+      </label>
+    </div>
+    <button type="button" class="btn-remove client-card-edit__remove" data-action="remove-course" data-coi="${ci}" aria-label="Eliminar curso">Eliminar</button>
+  </div>`
+}
+
+function coursesPanelHTML() {
+  const courses = Array.isArray(state.site?.courses) ? state.site.courses : []
+  const list = courses.length
+    ? courses.map((c, i) => courseCardHTML(c, i)).join('')
+    : '<p class="empty-hint">Todavía no hay cursos. Agregá el primero.</p>'
+  return `
+  <section class="card section is-open" id="editor-courses">
+    <div class="section-body">
+      <p class="section-hint">Cursos que se muestran en la pestaña “Cursos” de la tienda. La imagen se muestra apaisada (recomendado 1200 × 750 px).</p>
+      <div class="clients-list">
+        ${list}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" data-action="add-course">+ Agregar curso</button>
+    </div>
+  </section>`
+}
+
 function renderEditor() {
   if (!state) return
   const saveLabel = loading ? 'Guardando…' : 'Guardar cambios'
   const isClients = adminTab === 'clientes'
+  const isCourses = adminTab === 'cursos'
+
+  const tabClass = (t) => 'admin-tab' + (adminTab === t ? ' is-active' : '')
 
   const tabs = `
     <div class="admin-tabs">
-      <button type="button" class="admin-tab${isClients ? '' : ' is-active'}" data-action="admin-tab" data-tab="catalogo">🛍️ Productos</button>
-      <button type="button" class="admin-tab${isClients ? ' is-active' : ''}" data-action="admin-tab" data-tab="clientes">💬 Clientes</button>
+      <button type="button" class="${tabClass('catalogo')}" data-action="admin-tab" data-tab="catalogo">🛍️ Productos</button>
+      <button type="button" class="${tabClass('clientes')}" data-action="admin-tab" data-tab="clientes">💬 Clientes</button>
+      <button type="button" class="${tabClass('cursos')}" data-action="admin-tab" data-tab="cursos">🎓 Cursos</button>
     </div>`
 
-  const toolbar = isClients
-    ? `
-    <div class="editor-toolbar">
-      <div class="toolbar-info">
-        <strong>Clientes</strong>
-        <span>${clientsCount()} testimonio(s)</span>
-      </div>
-      <div class="toolbar-actions">
-        <button type="button" class="btn btn-secondary btn-sm" data-action="add-client">+ Cliente</button>
-        <button type="button" class="btn btn-primary btn-sm" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
-      </div>
-    </div>`
-    : `
+  const catalogToolbar = `
     <div class="editor-toolbar">
       <div class="toolbar-info">
         <strong>Editor de catálogo</strong>
@@ -617,14 +673,28 @@ function renderEditor() {
       </div>
     </div>`
 
-  const body = isClients
-    ? `
-    <div class="editor-body editor-body--full">
-      <div class="editor-main">
-        ${clientsPanelHTML()}
+  const simpleToolbar = (title, count, addAction, addLabel) => `
+    <div class="editor-toolbar">
+      <div class="toolbar-info">
+        <strong>${title}</strong>
+        <span>${count}</span>
+      </div>
+      <div class="toolbar-actions">
+        <button type="button" class="btn btn-secondary btn-sm" data-action="${addAction}">${addLabel}</button>
+        <button type="button" class="btn btn-primary btn-sm" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
       </div>
     </div>`
-    : `
+
+  let toolbar = catalogToolbar
+  if (isClients) toolbar = simpleToolbar('Clientes', `${clientsCount()} testimonio(s)`, 'add-client', '+ Cliente')
+  if (isCourses) toolbar = simpleToolbar('Cursos', `${coursesCount()} curso(s)`, 'add-course', '+ Curso')
+
+  const fullBody = (inner) => `
+    <div class="editor-body editor-body--full">
+      <div class="editor-main">${inner}</div>
+    </div>`
+
+  let body = `
     <div class="editor-body">
       <nav class="editor-nav" aria-label="Secciones del catálogo">
         <p class="nav-title">Ir a…</p>
@@ -635,24 +705,28 @@ function renderEditor() {
         ${state.groups.map((g, gi) => groupHTML(g, gi)).join('')}
       </div>
     </div>`
+  if (isClients) body = fullBody(clientsPanelHTML())
+  if (isCourses) body = fullBody(coursesPanelHTML())
 
-  const savebar = isClients
-    ? `
+  let savebarText = `${totalProducts()} productos en el catálogo`
+  if (isClients) savebarText = `${clientsCount()} testimonio(s)`
+  if (isCourses) savebarText = `${coursesCount()} curso(s)`
+
+  const savebar = `
     <div class="savebar">
-      <span>${clientsCount()} testimonio(s)</span>
+      <span>${savebarText}</span>
       <button type="button" class="btn btn-primary" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
     </div>`
-    : `
-    <div class="savebar">
-      <span>${totalProducts()} productos en el catálogo</span>
-      <button type="button" class="btn btn-primary" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
-    </div>`
+
+  let headerSub = 'Editá las categorías, subcategorías y productos del catálogo'
+  if (isClients) headerSub = 'Administrá los testimonios de tus clientes'
+  if (isCourses) headerSub = 'Administrá los cursos que ofrecés'
 
   root.innerHTML = `
     <header class="admin-header">
       <div>
         <h1>Panel de administración</h1>
-        <p>${isClients ? 'Administrá los testimonios de tus clientes' : 'Editá las categorías, subcategorías y productos del catálogo'}</p>
+        <p>${headerSub}</p>
       </div>
       <div class="admin-actions">
         <a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noreferrer">Ver tienda</a>
@@ -718,6 +792,11 @@ function handleEditorInput(t) {
     if (client) client[t.dataset.cfield] = t.value
     return
   }
+  if (t.dataset.course != null && t.dataset.cofield) {
+    const course = state.site?.courses?.[Number(t.dataset.course)]
+    if (course) course[t.dataset.cofield] = t.value
+    return
+  }
 
   const field = t.dataset.field
   if (!t.dataset.kind || !field) return
@@ -756,6 +835,12 @@ function handleEditorChange(t) {
   if (action === 'upload-client') {
     if (!t.files?.[0]) return
     uploadClientImage(Number(t.dataset.ci), t.files[0])
+    t.value = ''
+    return
+  }
+  if (action === 'upload-course') {
+    if (!t.files?.[0]) return
+    uploadCourseImage(Number(t.dataset.coi), t.files[0])
     t.value = ''
     return
   }
@@ -810,7 +895,8 @@ function handleEditorClick(btn) {
   if (action === 'logout') return logout()
   if (action === 'save') return saveCatalog()
   if (action === 'admin-tab') {
-    adminTab = btn.dataset.tab === 'clientes' ? 'clientes' : 'catalogo'
+    const tab = btn.dataset.tab
+    adminTab = (tab === 'clientes' || tab === 'cursos') ? tab : 'catalogo'
     return renderEditor()
   }
   if (action === 'expand-all') return expandAllSections()
@@ -862,6 +948,16 @@ function handleEditorClick(btn) {
   }
   if (action === 'remove-client') {
     state.site?.clients?.splice(Number(btn.dataset.ci), 1)
+    return renderEditor()
+  }
+  if (action === 'add-course') {
+    state.site = state.site || {}
+    if (!Array.isArray(state.site.courses)) state.site.courses = []
+    state.site.courses.push({ title: '', description: '', image: '' })
+    return renderEditor()
+  }
+  if (action === 'remove-course') {
+    state.site?.courses?.splice(Number(btn.dataset.coi), 1)
     renderEditor()
   }
 }

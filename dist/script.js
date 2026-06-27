@@ -1326,6 +1326,32 @@ function renderClientAvatars(container, clients) {
   container.innerHTML = avatars + more
 }
 
+function renderCourses(container, courses) {
+  if (!container) return
+  if (!Array.isArray(courses) || !courses.length) {
+    container.innerHTML = '<p class="store-clients__empty">Pronto vamos a publicar nuestros cursos.</p>'
+    return
+  }
+  container.innerHTML = courses
+    .map((c) => {
+      const img = resolveImg(c.image)
+      const media = img
+        ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(c.title)}">`
+        : `<span class="course-card__ph">✦</span>`
+      const title = c.title ? `<h3 class="course-card__title">${escapeHtml(c.title)}</h3>` : ''
+      const desc = c.description ? `<p class="course-card__desc">${escapeHtml(c.description)}</p>` : ''
+      return `
+      <article class="course-card">
+        <div class="course-card__media">${media}</div>
+        <div class="course-card__body">
+          ${title}
+          ${desc}
+        </div>
+      </article>`
+    })
+    .join('')
+}
+
 function applyClientsRating(catalog) {
   const starsEl = document.querySelector('.clients-rating__stars')
   const valueEl = document.querySelector('.clients-rating__value')
@@ -1341,19 +1367,24 @@ function applyClientsRating(catalog) {
 }
 
 function setupStoreViews(refs) {
-  const { clientsView, slider } = refs
+  const { overlays, slider } = refs
   const links = Array.from(document.querySelectorAll('.js-nav-view'))
   if (!links.length) return
 
   const setView = (view) => {
     links.forEach((a) => a.classList.toggle('is-active', a.dataset.view === view))
-    const isClients = view === 'clientes'
 
-    if (clientsView) clientsView.classList.toggle('is-open', isClients)
-    document.body.classList.toggle('is-clients-open', isClients)
+    let anyOpen = false
+    Object.entries(overlays || {}).forEach(([name, el]) => {
+      if (!el) return
+      const open = name === view
+      el.classList.toggle('is-open', open)
+      if (open) anyOpen = true
+    })
+    document.body.classList.toggle('is-overlay-open', anyOpen)
 
     if (!slider) return
-    if (isClients) slider.lock()
+    if (anyOpen) slider.lock()
     else slider.unlock()
   }
 
@@ -1427,8 +1458,13 @@ async function boot() {
   renderClientAvatars(document.querySelector('.js-clients-avatars'), catalog?.site?.clients)
   applyClientsRating(catalog)
 
+  renderCourses(document.querySelector('.js-store-courses'), catalog?.site?.courses)
+
   setupStoreViews({
-    clientsView: document.querySelector('.js-clients-view'),
+    overlays: {
+      clientes: document.querySelector('.js-clients-view'),
+      cursos: document.querySelector('.js-courses-view')
+    },
     slider
   })
 

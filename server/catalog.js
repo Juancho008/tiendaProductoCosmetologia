@@ -73,6 +73,40 @@ export const DEFAULT_CLIENTS = [
   },
 ];
 
+// Cursos mostrados en la pestaña "Cursos".
+export const DEFAULT_COURSES = [
+  {
+    title: "Maquillaje profesional",
+    description:
+      "Aprendé técnicas de maquillaje profesional desde cero, con práctica guiada y materiales incluidos.",
+    image: "",
+  },
+  {
+    title: "Cuidado de la piel",
+    description:
+      "Rutinas y tratamientos faciales para todo tipo de piel. Teoría y práctica con certificado.",
+    image: "",
+  },
+  {
+    title: "Uñas esculpidas",
+    description:
+      "Curso completo de uñas esculpidas y nail art, ideal para iniciar tu emprendimiento.",
+    image: "",
+  },
+];
+
+function sanitizeCourses(raw) {
+  if (!Array.isArray(raw)) return DEFAULT_COURSES.map((c) => ({ ...c }));
+  return raw
+    .slice(0, 60)
+    .map((c) => ({
+      title: String(c?.title ?? "").slice(0, 80),
+      description: String(c?.description ?? "").slice(0, 500),
+      image: String(c?.image ?? "").slice(0, 300),
+    }))
+    .filter((c) => c.title || c.description || c.image);
+}
+
 function clampStars(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return 5;
@@ -176,6 +210,7 @@ export function sanitizeCatalog(raw) {
     clients: sanitizeClients(raw?.site?.clients),
     clientsStars: clampStars(raw?.site?.clientsStars),
     clientsRating: sanitizeRating(raw?.site?.clientsRating),
+    courses: sanitizeCourses(raw?.site?.courses),
   };
 
   return {
