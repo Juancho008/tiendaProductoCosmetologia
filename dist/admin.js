@@ -5,6 +5,7 @@ let token = sessionStorage.getItem(TOKEN_KEY) || ''
 let state = null // { site, groups: [{ id, label, subcategories: [{ id, label, emoji, enabled, products }] }] }
 let expanded = new Set(['site'])
 let activeNav = 'site'
+let adminTab = 'catalogo'
 let pendingScroll = null
 let loading = false
 let messageTimer = null
@@ -552,45 +553,51 @@ function clientCardHTML(client, ci) {
   </div>`
 }
 
-function clientsSectionHTML() {
-  const open = isOpen('clients')
+function clientsCount() {
+  return Array.isArray(state.site?.clients) ? state.site.clients.length : 0
+}
+
+function clientsPanelHTML() {
   const clients = Array.isArray(state.site?.clients) ? state.site.clients : []
   const list = clients.length
     ? clients.map((c, i) => clientCardHTML(c, i)).join('')
     : '<p class="empty-hint">Todavía no hay clientes. Agregá el primero.</p>'
-  const body = !open ? '' : `
+  return `
+  <section class="card section is-open" id="editor-clients">
     <div class="section-body">
       <p class="section-hint">Testimonios que se muestran en la pestaña “Clientes” de la tienda. La foto se muestra como retrato vertical (recomendado 800 × 1000 px). Es opcional: si no cargás una, se muestran las iniciales.</p>
       <div class="clients-list">
         ${list}
       </div>
       <button type="button" class="btn btn-secondary btn-sm" data-action="add-client">+ Agregar cliente</button>
-    </div>`
-  return `
-  <section class="card section${open ? ' is-open' : ''}" id="editor-clients">
-    <button type="button" class="section-toggle" data-action="toggle-section" data-id="clients" aria-expanded="${open}">
-      <span>💬 Clientes</span>
-      <span class="chevron">${open ? '▼' : '▶'}</span>
-    </button>
-    ${body}
+    </div>
   </section>`
 }
 
 function renderEditor() {
   if (!state) return
   const saveLabel = loading ? 'Guardando…' : 'Guardar cambios'
-  root.innerHTML = `
-    <header class="admin-header">
-      <div>
-        <h1>Panel de administración</h1>
-        <p>Editá las categorías, subcategorías y productos del catálogo</p>
-      </div>
-      <div class="admin-actions">
-        <a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noreferrer">Ver tienda</a>
-        <button type="button" class="btn btn-ghost btn-sm" data-action="logout">Salir</button>
-      </div>
-    </header>
+  const isClients = adminTab === 'clientes'
 
+  const tabs = `
+    <div class="admin-tabs">
+      <button type="button" class="admin-tab${isClients ? '' : ' is-active'}" data-action="admin-tab" data-tab="catalogo">🛍️ Productos</button>
+      <button type="button" class="admin-tab${isClients ? ' is-active' : ''}" data-action="admin-tab" data-tab="clientes">💬 Clientes</button>
+    </div>`
+
+  const toolbar = isClients
+    ? `
+    <div class="editor-toolbar">
+      <div class="toolbar-info">
+        <strong>Clientes</strong>
+        <span>${clientsCount()} testimonio(s)</span>
+      </div>
+      <div class="toolbar-actions">
+        <button type="button" class="btn btn-secondary btn-sm" data-action="add-client">+ Cliente</button>
+        <button type="button" class="btn btn-primary btn-sm" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
+      </div>
+    </div>`
+    : `
     <div class="editor-toolbar">
       <div class="toolbar-info">
         <strong>Editor de catálogo</strong>
@@ -602,8 +609,16 @@ function renderEditor() {
         <button type="button" class="btn btn-secondary btn-sm" data-action="add-group">+ Categoría</button>
         <button type="button" class="btn btn-primary btn-sm" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
       </div>
-    </div>
+    </div>`
 
+  const body = isClients
+    ? `
+    <div class="editor-body editor-body--full">
+      <div class="editor-main">
+        ${clientsPanelHTML()}
+      </div>
+    </div>`
+    : `
     <div class="editor-body">
       <nav class="editor-nav" aria-label="Secciones del catálogo">
         <p class="nav-title">Ir a…</p>
@@ -611,15 +626,38 @@ function renderEditor() {
       </nav>
       <div class="editor-main">
         ${siteSectionHTML()}
-        ${clientsSectionHTML()}
         ${state.groups.map((g, gi) => groupHTML(g, gi)).join('')}
       </div>
-    </div>
+    </div>`
 
+  const savebar = isClients
+    ? `
+    <div class="savebar">
+      <span>${clientsCount()} testimonio(s)</span>
+      <button type="button" class="btn btn-primary" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
+    </div>`
+    : `
     <div class="savebar">
       <span>${totalProducts()} productos en el catálogo</span>
       <button type="button" class="btn btn-primary" data-action="save" ${loading ? 'disabled' : ''}>${saveLabel}</button>
     </div>`
+
+  root.innerHTML = `
+    <header class="admin-header">
+      <div>
+        <h1>Panel de administración</h1>
+        <p>${isClients ? 'Administrá los testimonios de tus clientes' : 'Editá las categorías, subcategorías y productos del catálogo'}</p>
+      </div>
+      <div class="admin-actions">
+        <a class="btn btn-ghost btn-sm" href="/" target="_blank" rel="noreferrer">Ver tienda</a>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="logout">Salir</button>
+      </div>
+    </header>
+
+    ${tabs}
+    ${toolbar}
+    ${body}
+    ${savebar}`
 
   if (pendingScroll) {
     const el = document.getElementById('editor-' + pendingScroll)
@@ -765,6 +803,10 @@ function handleEditorClick(btn) {
 
   if (action === 'logout') return logout()
   if (action === 'save') return saveCatalog()
+  if (action === 'admin-tab') {
+    adminTab = btn.dataset.tab === 'clientes' ? 'clientes' : 'catalogo'
+    return renderEditor()
+  }
   if (action === 'expand-all') return expandAllSections()
   if (action === 'collapse-all') {
     expanded = new Set()

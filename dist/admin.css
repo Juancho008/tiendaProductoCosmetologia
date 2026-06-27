@@ -261,6 +261,46 @@ textarea {
   flex-wrap: wrap;
 }
 
+/* Pestañas Productos / Clientes */
+.admin-tabs {
+  display: flex;
+  gap: 0.6rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.admin-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.8rem 1rem;
+  background: rgba(30, 10, 14, 0.5);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: "Jost", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.admin-tab:hover {
+  color: var(--gold-soft);
+  border-color: var(--gold);
+}
+
+.admin-tab.is-active {
+  color: #1e0a0e;
+  background: linear-gradient(135deg, var(--gold), var(--gold-soft));
+  border-color: transparent;
+  font-weight: 500;
+}
+
 /* Body: sidebar + main */
 .editor-body {
   display: grid;
@@ -270,6 +310,10 @@ textarea {
   margin: 0 auto;
   padding: 1.5rem 1.5rem 6rem;
   align-items: start;
+}
+
+.editor-body--full {
+  grid-template-columns: 1fr;
 }
 
 .editor-nav {
