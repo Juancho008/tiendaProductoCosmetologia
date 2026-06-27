@@ -73,6 +73,17 @@ export const DEFAULT_CLIENTS = [
   },
 ];
 
+function clampStars(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return 5;
+  return Math.max(0, Math.min(5, n));
+}
+
+function sanitizeRating(value) {
+  const s = String(value ?? "").trim().replace(/[^0-9.,]/g, "").replace(",", ".");
+  return s.slice(0, 4) || "4.9";
+}
+
 function sanitizeClients(raw) {
   if (!Array.isArray(raw)) return DEFAULT_CLIENTS.map((c) => ({ ...c }));
   return raw
@@ -163,6 +174,8 @@ export function sanitizeCatalog(raw) {
     slides: sanitizeSlides(raw?.site?.slides),
     sideText: sanitizeSideText(raw?.site?.sideText),
     clients: sanitizeClients(raw?.site?.clients),
+    clientsStars: clampStars(raw?.site?.clientsStars),
+    clientsRating: sanitizeRating(raw?.site?.clientsRating),
   };
 
   return {

@@ -559,60 +559,81 @@ textarea {
 }
 
 .clients-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-.client-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 1rem;
-  align-items: start;
-  padding: 1rem;
+.client-card-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.85rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface);
   min-width: 0;
 }
 
-.client-media {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  width: 5rem;
-}
-
-.client-media img {
-  width: 5rem;
-  height: 6.25rem;
-  object-fit: cover;
+.client-photo {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  border-radius: 9px;
+  overflow: hidden;
+  cursor: pointer;
   border: 1px solid var(--line);
-  border-radius: 8px;
   background: var(--bg);
+  transition: border-color 0.2s ease;
 }
 
-.client-fields {
+.client-photo:hover {
+  border-color: var(--gold);
+}
+
+.client-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.client-photo input {
+  display: none;
+}
+
+.client-photo__btn {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 0.55rem 0.4rem;
+  text-align: center;
+  font-size: 0.6rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #f7f0eb;
+  background: linear-gradient(to top, rgba(8, 3, 4, 0.88), rgba(8, 3, 4, 0));
+}
+
+.client-card-edit__fields {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.55rem;
   min-width: 0;
 }
 
-.client-fields input,
-.client-fields textarea {
+.client-card-edit__fields input,
+.client-card-edit__fields textarea {
   width: 100%;
   max-width: 100%;
 }
 
-.client-fields textarea {
-  min-height: 3.5rem;
+.client-card-edit__fields textarea {
+  min-height: 3.25rem;
 }
 
-.client-row-actions {
-  display: flex;
-  align-items: flex-start;
+.client-card-edit__remove {
+  align-self: stretch;
 }
 
 /* Collapsible sections */
@@ -999,24 +1020,14 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .client-row {
-    grid-template-columns: 1fr;
-    justify-items: stretch;
+  .clients-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
   }
 
-  .client-media {
-    width: 100%;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .client-media .image-upload {
-    flex: 1;
-  }
-
-  .client-row-actions {
-    justify-content: flex-end;
+  .client-card-edit {
+    padding: 0.6rem;
+    gap: 0.55rem;
   }
 
   .admin-header {

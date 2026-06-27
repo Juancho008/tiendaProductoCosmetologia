@@ -1326,6 +1326,20 @@ function renderClientAvatars(container, clients) {
   container.innerHTML = avatars + more
 }
 
+function applyClientsRating(catalog) {
+  const starsEl = document.querySelector('.clients-rating__stars')
+  const valueEl = document.querySelector('.clients-rating__value')
+  if (starsEl) {
+    const filled = Math.max(0, Math.min(5, Math.round(Number(catalog?.site?.clientsStars))))
+    const count = Number.isFinite(filled) ? filled : 5
+    starsEl.textContent = '★'.repeat(count) + '☆'.repeat(5 - count)
+  }
+  if (valueEl) {
+    const rating = catalog?.site?.clientsRating || '4.9'
+    valueEl.textContent = `${rating}/5 · Clientes reales`
+  }
+}
+
 function setupStoreViews(refs) {
   const { clientsView, slider } = refs
   const links = Array.from(document.querySelectorAll('.js-nav-view'))
@@ -1411,6 +1425,7 @@ async function boot() {
   const clientsEl = document.querySelector('.js-store-clients')
   renderClients(clientsEl, catalog?.site?.clients)
   renderClientAvatars(document.querySelector('.js-clients-avatars'), catalog?.site?.clients)
+  applyClientsRating(catalog)
 
   setupStoreViews({
     clientsView: document.querySelector('.js-clients-view'),

@@ -530,16 +530,15 @@ function siteSectionHTML() {
 
 function clientCardHTML(client, ci) {
   const image = resolveImg(client.image) || ''
-  const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="%231e0a0e"/></svg>')
+  const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="160"><rect width="120" height="160" fill="%231e0a0e"/></svg>')
   return `
-  <div class="client-row" data-ci="${ci}">
-    <div class="client-media">
+  <div class="client-card-edit" data-ci="${ci}">
+    <label class="client-photo">
       <img src="${escapeHtml(thumb)}" alt="">
-      <label class="image-upload">📷 Foto
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-action="upload-client" data-ci="${ci}">
-      </label>
-    </div>
-    <div class="client-fields">
+      <span class="client-photo__btn">📷 Cambiar foto</span>
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-action="upload-client" data-ci="${ci}">
+    </label>
+    <div class="client-card-edit__fields">
       <label>Nombre
         <input type="text" value="${escapeHtml(client.name || '')}" data-client="${ci}" data-cfield="name" placeholder="Ej: María González">
       </label>
@@ -547,9 +546,7 @@ function clientCardHTML(client, ci) {
         <textarea data-client="${ci}" data-cfield="comment" placeholder="Opinión del cliente">${escapeHtml(client.comment || '')}</textarea>
       </label>
     </div>
-    <div class="client-row-actions">
-      <button type="button" class="btn-remove" data-action="remove-client" data-ci="${ci}" aria-label="Eliminar cliente">Eliminar</button>
-    </div>
+    <button type="button" class="btn-remove client-card-edit__remove" data-action="remove-client" data-ci="${ci}" aria-label="Eliminar cliente">Eliminar</button>
   </div>`
 }
 
@@ -562,9 +559,18 @@ function clientsPanelHTML() {
   const list = clients.length
     ? clients.map((c, i) => clientCardHTML(c, i)).join('')
     : '<p class="empty-hint">Todavía no hay clientes. Agregá el primero.</p>'
+  const site = state.site || {}
   return `
   <section class="card section is-open" id="editor-clients">
     <div class="section-body">
+      <div class="grid-2">
+        <label>Valoración <span class="label-hint">(ej: 4.9)</span>
+          <input type="text" inputmode="decimal" value="${escapeHtml(site.clientsRating ?? '4.9')}" data-site="clientsRating" placeholder="4.9">
+        </label>
+        <label>Estrellas llenas <span class="label-hint">(0 a 5)</span>
+          <input type="number" min="0" max="5" step="1" value="${escapeHtml(site.clientsStars ?? 5)}" data-site="clientsStars" placeholder="5">
+        </label>
+      </div>
       <p class="section-hint">Testimonios que se muestran en la pestaña “Clientes” de la tienda. La foto se muestra como retrato vertical (recomendado 800 × 1000 px). Es opcional: si no cargás una, se muestran las iniciales.</p>
       <div class="clients-list">
         ${list}
