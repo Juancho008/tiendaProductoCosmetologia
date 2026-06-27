@@ -52,6 +52,39 @@ function sanitizeSideText(raw) {
   };
 }
 
+// Testimonios de clientes mostrados en la pestaña "Clientes".
+export const DEFAULT_CLIENTS = [
+  {
+    name: "María González",
+    comment:
+      "Los productos son de excelente calidad y la atención es impecable. ¡Volveré seguro!",
+    image: "",
+  },
+  {
+    name: "Carla Ruiz",
+    comment:
+      "Me encantó el asesoramiento personalizado. Mi piel nunca se sintió mejor.",
+    image: "",
+  },
+  {
+    name: "Lucía Fernández",
+    comment: "Súper recomendable. Variedad, buenos precios y envíos rápidos.",
+    image: "",
+  },
+];
+
+function sanitizeClients(raw) {
+  if (!Array.isArray(raw)) return DEFAULT_CLIENTS.map((c) => ({ ...c }));
+  return raw
+    .slice(0, 60)
+    .map((c) => ({
+      name: String(c?.name ?? "").slice(0, 60),
+      comment: String(c?.comment ?? "").slice(0, 400),
+      image: String(c?.image ?? "").slice(0, 300),
+    }))
+    .filter((c) => c.name || c.comment || c.image);
+}
+
 function sanitizeProduct(raw, index, categoryId) {
   const id =
     raw && raw.id && String(raw.id).trim()
@@ -129,6 +162,7 @@ export function sanitizeCatalog(raw) {
     heroImages: sanitizeHeroImages(raw?.site?.heroImages),
     slides: sanitizeSlides(raw?.site?.slides),
     sideText: sanitizeSideText(raw?.site?.sideText),
+    clients: sanitizeClients(raw?.site?.clients),
   };
 
   return {

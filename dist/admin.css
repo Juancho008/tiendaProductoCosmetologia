@@ -500,6 +500,77 @@ textarea {
   gap: 0.5rem;
 }
 
+/* Clientes */
+.section-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.empty-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0 1rem;
+}
+
+.clients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.client-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  min-width: 0;
+}
+
+.client-media {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 5rem;
+}
+
+.client-media img {
+  width: 5rem;
+  height: 6.25rem;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.client-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.client-fields input,
+.client-fields textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
+.client-fields textarea {
+  min-height: 3.5rem;
+}
+
+.client-row-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
 /* Collapsible sections */
 .section {
   padding: 0;
@@ -882,6 +953,26 @@ textarea {
 
   .text-grid {
     grid-template-columns: 1fr;
+  }
+
+  .client-row {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .client-media {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .client-media .image-upload {
+    flex: 1;
+  }
+
+  .client-row-actions {
+    justify-content: flex-end;
   }
 
   .admin-header {

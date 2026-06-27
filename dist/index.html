@@ -15,7 +15,10 @@
     <nav class="nav nav--left js-nav">
       <ul>
         <li>
-          <a href="#" class="is-active"><span>Tienda</span></a>
+          <a href="#" class="is-active js-nav-view" data-view="tienda"><span>Tienda</span></a>
+        </li>
+        <li>
+          <a href="#" class="js-nav-view" data-view="clientes"><span>Clientes</span></a>
         </li>
       </ul>
     </nav>
@@ -88,7 +91,7 @@
           <div class="store-showcase js-store-showcase">
             <div class="store-head">
               <h2 class="store-title js-store-title">Tienda</h2>
-              <label class="store-search">
+              <label class="store-search js-store-search-box">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
                 <input type="search" class="js-store-search" placeholder="Buscar productos…" aria-label="Buscar productos">
               </label>
@@ -135,6 +138,23 @@
         Colección Bordó
       </span>
     </div>
+
+    <section class="clients-view js-clients-view" aria-label="Opiniones de clientes">
+      <div class="clients-view__inner">
+        <header class="clients-hero">
+          <p class="clients-hero__eyebrow">Testimonios</p>
+          <h2 class="clients-hero__title">Nos eligen y nos <em>recomiendan</em></h2>
+          <div class="clients-hero__meta">
+            <div class="clients-avatars js-clients-avatars"></div>
+            <div class="clients-rating">
+              <span class="clients-rating__stars">★★★★★</span>
+              <span class="clients-rating__value">4.9/5 · Clientes reales</span>
+            </div>
+          </div>
+        </header>
+        <div class="clients-grid js-store-clients"></div>
+      </div>
+    </section>
 
     <div class="cart-overlay js-cart-overlay" aria-hidden="true">
       <aside class="cart-panel js-cart-panel" role="dialog" aria-label="Carrito de compras">

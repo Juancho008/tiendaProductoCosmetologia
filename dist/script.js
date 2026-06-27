@@ -290,6 +290,8 @@ class Slider {
       initial: true
     }
 
+    this.locked = false
+
     this.slideTl = null
     this.bgTween = null
     this.textures = null
@@ -731,7 +733,34 @@ class Slider {
     this.prevSlide()
   }
 
+  lock() {
+    this.locked = true
+    this.stopAutoplay?.()
+    if (this.scrollHint) this.scrollHint.style.opacity = '0'
+  }
+
+  unlock() {
+    this.locked = false
+    if (this.scrollHint) this.scrollHint.style.opacity = ''
+  }
+
+  navigateTo(index) {
+    const target = Math.max(0, Math.min(index, this.data.total))
+    const step = () => {
+      if (this.data.current === target) return
+      if (this.state.animating) {
+        requestAnimationFrame(step)
+        return
+      }
+      if (target > this.data.current) this.nextSlide()
+      else this.prevSlide()
+      requestAnimationFrame(step)
+    }
+    step()
+  }
+
   onWheel(e) {
+    if (this.locked) return
     if (this.state.animating) return
 
     if (e.deltaY > 0) {
@@ -746,12 +775,14 @@ class Slider {
   }
 
   onTouchStart(e) {
+    if (this.locked) return
     this.touchStartY = e.touches[0].clientY
     this.touchStartX = e.touches[0].clientX
     this.touchInStoreGrid = !!e.target.closest('.js-carousel')
   }
 
   onTouchEnd(e) {
+    if (this.locked) return
     if (this.state.animating) return
 
     const deltaY = this.touchStartY - e.changedTouches[0].clientY
@@ -1152,16 +1183,6 @@ class QuickView {
   }
 }
 
-const links = document.querySelectorAll('.js-nav a')
-
-links.forEach((link) => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault()
-    links.forEach((other) => other.classList.remove('is-active'))
-    link.classList.add('is-active')
-  })
-})
-
 async function fetchCatalog() {
   try {
     const r = await fetch(apiUrl('/api/catalog'), { cache: 'no-store' })
@@ -1249,6 +1270,87 @@ function applyHeroTexts(catalog) {
     : escapeHtml(side.title)
 }
 
+function clientInitials(name) {
+  return String(name || '?')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join('')
+}
+
+function renderClients(container, clients) {
+  if (!container) return
+  if (!Array.isArray(clients) || !clients.length) {
+    container.innerHTML = '<p class="store-clients__empty">Pronto compartiremos las opiniones de nuestros clientes.</p>'
+    return
+  }
+  container.innerHTML = clients
+    .map((c) => {
+      const img = resolveImg(c.image)
+      const media = img
+        ? `<img src="${escapeHtml(img)}" alt="${escapeHtml(c.name)}">`
+        : `<span class="client-card__initials">${escapeHtml(clientInitials(c.name))}</span>`
+      const name = c.name ? `<span class="client-card__name">${escapeHtml(c.name)}</span>` : ''
+      const quote = c.comment ? `<p class="client-card__quote">“${escapeHtml(c.comment)}”</p>` : ''
+      return `
+      <figure class="client-card${img ? '' : ' client-card--noimg'}">
+        <div class="client-card__media">${media}</div>
+        <figcaption class="client-card__body">
+          ${name}
+          ${quote}
+        </figcaption>
+      </figure>`
+    })
+    .join('')
+}
+
+function renderClientAvatars(container, clients) {
+  if (!container) return
+  const list = Array.isArray(clients) ? clients.filter((c) => c.name || c.image) : []
+  if (!list.length) {
+    container.innerHTML = ''
+    return
+  }
+  const shown = list.slice(0, 5)
+  const extra = list.length - shown.length
+  const avatars = shown
+    .map((c) => {
+      const img = resolveImg(c.image)
+      return img
+        ? `<span class="clients-avatar"><img src="${escapeHtml(img)}" alt="${escapeHtml(c.name)}"></span>`
+        : `<span class="clients-avatar clients-avatar--initials">${escapeHtml(clientInitials(c.name))}</span>`
+    })
+    .join('')
+  const more = extra > 0 ? `<span class="clients-avatar clients-avatar--more">+${extra}</span>` : ''
+  container.innerHTML = avatars + more
+}
+
+function setupStoreViews(refs) {
+  const { clientsView, slider } = refs
+  const links = Array.from(document.querySelectorAll('.js-nav-view'))
+  if (!links.length) return
+
+  const setView = (view) => {
+    links.forEach((a) => a.classList.toggle('is-active', a.dataset.view === view))
+    const isClients = view === 'clientes'
+
+    if (clientsView) clientsView.classList.toggle('is-open', isClients)
+    document.body.classList.toggle('is-clients-open', isClients)
+
+    if (!slider) return
+    if (isClients) slider.lock()
+    else slider.unlock()
+  }
+
+  links.forEach((a) => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault()
+      setView(a.dataset.view)
+    })
+  })
+}
+
 async function boot() {
   const catalog = await fetchCatalog()
   const categories = normalizeCategories(catalog)
@@ -1305,6 +1407,15 @@ async function boot() {
       applyFilter()
     })
   }
+
+  const clientsEl = document.querySelector('.js-store-clients')
+  renderClients(clientsEl, catalog?.site?.clients)
+  renderClientAvatars(document.querySelector('.js-clients-avatars'), catalog?.site?.clients)
+
+  setupStoreViews({
+    clientsView: document.querySelector('.js-clients-view'),
+    slider
+  })
 
   window.__elegance = { cart, slider, productCarousel, quickView, applyFilter }
 }

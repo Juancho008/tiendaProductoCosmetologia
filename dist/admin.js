@@ -244,6 +244,27 @@ async function uploadHeroImage(index, file) {
   renderEditor()
 }
 
+async function uploadClientImage(ci, file) {
+  const client = state.site?.clients?.[ci]
+  if (!client) return
+  const form = new FormData()
+  form.append('image', file)
+  showMessage('Subiendo imagen…')
+  const r = await fetch(apiUrl('/api/admin/upload'), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form
+  })
+  const data = await r.json().catch(() => ({}))
+  if (!r.ok) {
+    showMessage(data.error || 'No se pudo subir la imagen', true)
+    return
+  }
+  client.image = data.url
+  showMessage('Foto del cliente actualizada')
+  renderEditor()
+}
+
 // ---------- IDs de sección ----------
 
 function sectionId(gi, si) {
@@ -506,6 +527,55 @@ function siteSectionHTML() {
   </section>`
 }
 
+function clientCardHTML(client, ci) {
+  const image = resolveImg(client.image) || ''
+  const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" fill="%231e0a0e"/></svg>')
+  return `
+  <div class="client-row" data-ci="${ci}">
+    <div class="client-media">
+      <img src="${escapeHtml(thumb)}" alt="">
+      <label class="image-upload">📷 Foto
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-action="upload-client" data-ci="${ci}">
+      </label>
+    </div>
+    <div class="client-fields">
+      <label>Nombre
+        <input type="text" value="${escapeHtml(client.name || '')}" data-client="${ci}" data-cfield="name" placeholder="Ej: María González">
+      </label>
+      <label>Comentario
+        <textarea data-client="${ci}" data-cfield="comment" placeholder="Opinión del cliente">${escapeHtml(client.comment || '')}</textarea>
+      </label>
+    </div>
+    <div class="client-row-actions">
+      <button type="button" class="btn-remove" data-action="remove-client" data-ci="${ci}" aria-label="Eliminar cliente">Eliminar</button>
+    </div>
+  </div>`
+}
+
+function clientsSectionHTML() {
+  const open = isOpen('clients')
+  const clients = Array.isArray(state.site?.clients) ? state.site.clients : []
+  const list = clients.length
+    ? clients.map((c, i) => clientCardHTML(c, i)).join('')
+    : '<p class="empty-hint">Todavía no hay clientes. Agregá el primero.</p>'
+  const body = !open ? '' : `
+    <div class="section-body">
+      <p class="section-hint">Testimonios que se muestran en la pestaña “Clientes” de la tienda. La foto se muestra como retrato vertical (recomendado 800 × 1000 px). Es opcional: si no cargás una, se muestran las iniciales.</p>
+      <div class="clients-list">
+        ${list}
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" data-action="add-client">+ Agregar cliente</button>
+    </div>`
+  return `
+  <section class="card section${open ? ' is-open' : ''}" id="editor-clients">
+    <button type="button" class="section-toggle" data-action="toggle-section" data-id="clients" aria-expanded="${open}">
+      <span>💬 Clientes</span>
+      <span class="chevron">${open ? '▼' : '▶'}</span>
+    </button>
+    ${body}
+  </section>`
+}
+
 function renderEditor() {
   if (!state) return
   const saveLabel = loading ? 'Guardando…' : 'Guardar cambios'
@@ -541,6 +611,7 @@ function renderEditor() {
       </nav>
       <div class="editor-main">
         ${siteSectionHTML()}
+        ${clientsSectionHTML()}
         ${state.groups.map((g, gi) => groupHTML(g, gi)).join('')}
       </div>
     </div>
@@ -598,6 +669,11 @@ function handleEditorInput(t) {
     handleSideTextInput(t.dataset.sidetext, t.value)
     return
   }
+  if (t.dataset.client != null && t.dataset.cfield) {
+    const client = state.site?.clients?.[Number(t.dataset.client)]
+    if (client) client[t.dataset.cfield] = t.value
+    return
+  }
 
   const field = t.dataset.field
   if (!t.dataset.kind || !field) return
@@ -630,6 +706,12 @@ function handleEditorChange(t) {
   if (action === 'upload-hero') {
     if (!t.files?.[0]) return
     uploadHeroImage(Number(t.dataset.heroIndex), t.files[0])
+    t.value = ''
+    return
+  }
+  if (action === 'upload-client') {
+    if (!t.files?.[0]) return
+    uploadClientImage(Number(t.dataset.ci), t.files[0])
     t.value = ''
     return
   }
@@ -721,6 +803,17 @@ function handleEditorClick(btn) {
   }
   if (action === 'remove-product') {
     state.groups[gi].subcategories[si].products.splice(pi, 1)
+    return renderEditor()
+  }
+  if (action === 'add-client') {
+    state.site = state.site || {}
+    if (!Array.isArray(state.site.clients)) state.site.clients = []
+    state.site.clients.push({ name: '', comment: '', image: '' })
+    expanded.add('clients')
+    return renderEditor()
+  }
+  if (action === 'remove-client') {
+    state.site?.clients?.splice(Number(btn.dataset.ci), 1)
     renderEditor()
   }
 }
