@@ -409,6 +409,72 @@ textarea {
   gap: 1rem;
 }
 
+/* Imágenes de portada */
+.hero-block {
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+}
+
+.hero-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.hero-block-title {
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.hero-block-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.9rem;
+}
+
+.hero-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.hero-slot img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.hero-slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-slot-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.hero-slot .image-upload {
+  width: 100%;
+}
+
 /* Collapsible sections */
 .section {
   padding: 0;
@@ -782,6 +848,11 @@ textarea {
 @media (max-width: 720px) {
   .grid-2 {
     grid-template-columns: 1fr;
+  }
+
+  .hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
   }
 
   .admin-header {

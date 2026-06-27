@@ -1012,7 +1012,7 @@ const ICON_BAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const PLACEHOLDER_IMG =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%231e0a0e"/><text x="50%" y="50%" fill="%23c9a962" font-family="serif" font-size="28" text-anchor="middle" dy=".35em">Élégance</text></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%231e0a0e"/><text x="50%" y="50%" fill="%23c9a962" font-family="serif" font-size="28" text-anchor="middle" dy=".35em">Beauty</text></svg>'
   )
 
 function escapeHtml(value) {
@@ -1215,10 +1215,21 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
+function applyHeroImages(catalog) {
+  const heroImages = catalog?.site?.heroImages
+  if (!Array.isArray(heroImages)) return
+  document.querySelectorAll('[data-hero]').forEach((img) => {
+    const url = resolveImg(heroImages[Number(img.dataset.hero)])
+    if (url) img.src = url
+  })
+}
+
 async function boot() {
   const catalog = await fetchCatalog()
   const categories = normalizeCategories(catalog)
   const allProducts = categories.flatMap((c) => c.products)
+
+  applyHeroImages(catalog)
 
   const track = document.querySelector('.js-carousel-track')
   renderProducts(track, allProducts)

@@ -223,6 +223,27 @@ async function uploadImage(gi, si, pi, file) {
   renderEditor()
 }
 
+async function uploadHeroImage(index, file) {
+  state.site = state.site || {}
+  if (!Array.isArray(state.site.heroImages)) state.site.heroImages = []
+  const form = new FormData()
+  form.append('image', file)
+  showMessage('Subiendo imagen…')
+  const r = await fetch(apiUrl('/api/admin/upload'), {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form
+  })
+  const data = await r.json().catch(() => ({}))
+  if (!r.ok) {
+    showMessage(data.error || 'No se pudo subir la imagen', true)
+    return
+  }
+  state.site.heroImages[index] = data.url
+  showMessage('Imagen de portada actualizada')
+  renderEditor()
+}
+
 // ---------- IDs de sección ----------
 
 function sectionId(gi, si) {
@@ -241,7 +262,7 @@ function renderLogin() {
   root.innerHTML = `
     <div class="login-screen">
       <form class="login-card" id="login-form">
-        <h1 class="login-brand">Élégance</h1>
+        <h1 class="login-brand">Beauty</h1>
         <p class="login-sub">Panel de administración</p>
         <label>
           Contraseña
@@ -399,9 +420,26 @@ function groupHTML(group, gi) {
   </section>`
 }
 
+function heroSlotHTML(label, index, url) {
+  const image = resolveImg(url) || ''
+  const thumb = image || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="120"><rect width="80" height="120" fill="%231e0a0e"/></svg>')
+  return `
+  <div class="hero-slot">
+    <img src="${escapeHtml(thumb)}" alt="">
+    <div class="hero-slot-info">
+      <span class="hero-slot-label">${label}</span>
+      <label class="image-upload">📷 Cambiar
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-action="upload-hero" data-hero-index="${index}">
+      </label>
+    </div>
+  </div>`
+}
+
 function siteSectionHTML() {
   const open = isOpen('site')
   const site = state.site || {}
+  const hero = Array.isArray(site.heroImages) ? site.heroImages : []
+  const heroLabels = ['Portada 1 · izquierda', 'Portada 1 · derecha', 'Portada 2 · izquierda', 'Portada 2 · derecha']
   const body = !open ? '' : `
     <div class="section-body">
       <div class="grid-2">
@@ -411,6 +449,15 @@ function siteSectionHTML() {
         <label>WhatsApp (sin + ni espacios)
           <input type="text" value="${escapeHtml(site.whatsappNumber || '')}" data-site="whatsappNumber" placeholder="549...">
         </label>
+      </div>
+      <div class="hero-block">
+        <div class="hero-block-head">
+          <span class="hero-block-title">🖼️ Imágenes de portada</span>
+          <span class="hero-block-hint">Tamaño recomendado: 800 × 1200 px (vertical)</span>
+        </div>
+        <div class="hero-grid">
+          ${heroLabels.map((label, i) => heroSlotHTML(label, i, hero[i])).join('')}
+        </div>
       </div>
     </div>`
   return `
@@ -520,6 +567,12 @@ function handleEditorChange(t) {
     const p = state.groups[Number(t.dataset.gi)]?.subcategories[Number(t.dataset.si)]?.products[Number(t.dataset.pi)]
     if (!p) return
     p.available = t.checked
+    return
+  }
+  if (action === 'upload-hero') {
+    if (!t.files?.[0]) return
+    uploadHeroImage(Number(t.dataset.heroIndex), t.files[0])
+    t.value = ''
     return
   }
   if (action !== 'upload' || !t.files?.[0]) return

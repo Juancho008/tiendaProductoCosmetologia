@@ -10,6 +10,22 @@ export function slugify(text) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Imágenes de portada (slides). Recomendado: 800 x 1200 px.
+export const DEFAULT_HERO_IMAGES = [
+  "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1556228720-195a672e8a03?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+];
+
+function sanitizeHeroImages(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return DEFAULT_HERO_IMAGES.map((fallback, i) => {
+    const value = String(list[i] || "").trim();
+    return value || fallback;
+  });
+}
+
 function sanitizeProduct(raw, index, categoryId) {
   const id =
     raw && raw.id && String(raw.id).trim()
@@ -77,13 +93,14 @@ function resolveCategories(raw) {
 /** Acepta el modelo nuevo (categories) o el viejo (products planos) y devuelve siempre el nuevo. */
 export function sanitizeCatalog(raw) {
   const site = {
-    storeName: String(raw?.site?.storeName || raw?.store?.name || "Élégance").trim(),
+    storeName: String(raw?.site?.storeName || raw?.store?.name || "Beauty").trim(),
     tagline: String(
       raw?.site?.tagline || raw?.store?.tagline || "Belleza Premium"
     ).trim(),
     whatsappNumber: String(
       raw?.site?.whatsappNumber || raw?.whatsappNumber || ""
     ).replace(/[^0-9]/g, ""),
+    heroImages: sanitizeHeroImages(raw?.site?.heroImages),
   };
 
   return {

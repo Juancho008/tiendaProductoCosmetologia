@@ -1,6 +1,6 @@
 export const seedCatalog = {
   site: {
-    storeName: "Élégance",
+    storeName: "Beauty",
     tagline: "Belleza Premium",
     whatsappNumber: ""
   },

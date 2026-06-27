@@ -76,13 +76,21 @@ a {
 
 .logo {
   position: absolute;
-  top: 2rem;
+  top: -1.75rem;
   left: 50%;
   transform: translateX(-50%);
   padding: 0;
   margin: 0;
   z-index: 10;
   text-align: center;
+}
+
+.logo__img {
+  display: block;
+  width: auto;
+  height: clamp(6rem, 4rem + 8vw, 11rem);
+  object-fit: contain;
+  filter: drop-shadow(0 6px 20px rgba(18, 6, 8, 0.45));
 }
 
 .logo__brand {
@@ -233,7 +241,7 @@ li {
   font-size: 0.6rem;
   font-weight: 500;
   letter-spacing: 0;
-  color: #e8d5b0;
+  color: #c9a962;
   margin-left: 0.85rem;
   transition: background 0.3s ease, border-color 0.3s ease;
 }
@@ -285,7 +293,7 @@ li {
 
 .slider__text-line div em {
   font-style: italic;
-  color: #e8d5b0;
+  color: #c9a962;
 }
 
 .slider__inner {
@@ -771,7 +779,7 @@ li {
 .product-action:hover {
   background: rgba(139, 41, 66, 0.92);
   border-color: #c9a962;
-  color: #e8d5b0;
+  color: #c9a962;
 }
 
 .product-action svg {
@@ -821,7 +829,7 @@ li {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: clamp(1.15rem, 0.85rem + 0.9vw, 1.65rem);
   font-weight: 600;
-  color: #e8d5b0;
+  color: #c9a962;
   letter-spacing: 0.04em;
   line-height: 1;
   text-shadow: 0 2px 12px rgba(201, 169, 98, 0.45);
@@ -877,9 +885,13 @@ li {
   }
 
   .logo {
-    top: 1.25rem;
+    top: -0.75rem;
     max-width: calc(100% - 4.5rem);
     padding: 0 0.5rem;
+  }
+
+  .logo__img {
+    height: clamp(5rem, 3.5rem + 14vw, 8rem);
   }
 
   .logo__brand {
@@ -1112,7 +1124,7 @@ li {
 }
 
 .cart-panel__close:hover {
-  color: #e8d5b0;
+  color: #c9a962;
 }
 
 .cart-panel__items {
@@ -1174,7 +1186,7 @@ li {
 .cart-item__price {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1rem;
-  color: #e8d5b0;
+  color: #c9a962;
 }
 
 .cart-item__actions {
@@ -1227,7 +1239,7 @@ li {
 }
 
 .cart-item__remove:hover {
-  color: #e8d5b0;
+  color: #c9a962;
 }
 
 .cart-panel__footer {
@@ -1252,7 +1264,7 @@ li {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #e8d5b0;
+  color: #c9a962;
   letter-spacing: 0.04em;
 }
 
@@ -1300,7 +1312,7 @@ li {
   padding: 0.75rem 1.5rem;
   background: rgba(30, 10, 14, 0.95);
   border: 1px solid rgba(201, 169, 98, 0.4);
-  color: #e8d5b0;
+  color: #c9a962;
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1386,7 +1398,7 @@ li {
 }
 
 .quickview__close:hover {
-  color: #e8d5b0;
+  color: #c9a962;
   border-color: #c9a962;
   background: rgba(139, 41, 66, 0.6);
 }
@@ -1445,7 +1457,7 @@ li {
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 1.9rem;
   font-weight: 600;
-  color: #e8d5b0;
+  color: #c9a962;
   margin: 0;
   letter-spacing: 0.03em;
 }
