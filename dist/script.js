@@ -375,8 +375,14 @@ class Slider {
         new Promise((resolve) => {
           texture = loader.load(
             image + '?v=' + Date.now(),
-            () => {
-              this.render()
+            (loaded) => {
+              if (index === 0 && this.mat && loaded.image) {
+                this.mat.uniforms.size.value.set(
+                  loaded.image.naturalWidth || loaded.image.width || 1,
+                  loaded.image.naturalHeight || loaded.image.height || 1
+                )
+              }
+              this.kickRenders()
               resolve()
             },
             undefined,
@@ -384,18 +390,12 @@ class Slider {
           )
           texture.minFilter = THREE.LinearFilter
           texture.generateMipmaps = false
-          if (index === 0 && this.mat) {
-            this.mat.uniforms.size.value = [
-              texture.image.naturalWidth,
-              texture.image.naturalHeight
-            ]
-          }
           this.textures.push(texture)
         })
       )
     })
 
-    this.texturesReady = Promise.all(pending)
+    this.texturesReady = Promise.all(pending).then(() => this.kickRenders())
 
     this.disp = loader.load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/58281/rock-_disp.png', this.render)
     this.disp.magFilter = this.disp.minFilter = THREE.LinearFilter
@@ -853,6 +853,15 @@ class Slider {
 
   render() {
     this.renderer.render(this.scene, this.camera)
+  }
+
+  kickRenders(duration = 700) {
+    const end = performance.now() + duration
+    const loop = () => {
+      this.render()
+      if (performance.now() < end) requestAnimationFrame(loop)
+    }
+    requestAnimationFrame(loop)
   }
 
   init() {
@@ -1530,6 +1539,10 @@ async function finishLoading(slider) {
       waitForImages(),
       slider?.texturesReady?.catch(() => {}) || Promise.resolve()
     ])
+    if (slider) {
+      slider.render()
+      await new Promise((r) => requestAnimationFrame(() => { slider.render(); r() }))
+    }
   })()
   await Promise.race([ready, new Promise((r) => setTimeout(r, 9000))])
   hidePreloader()
