@@ -1481,6 +1481,42 @@ async function boot() {
   })
 
   window.__elegance = { cart, slider, productCarousel, quickView, applyFilter }
+
+  await finishLoading()
 }
 
-boot()
+function hidePreloader() {
+  const pre = document.querySelector('.js-preloader')
+  document.documentElement.classList.remove('is-loading')
+  if (!pre || pre.classList.contains('is-done')) return
+  pre.classList.add('is-done')
+  setTimeout(() => pre.remove(), 1300)
+}
+
+function waitForImages() {
+  const imgs = [...document.querySelectorAll('img')].filter((i) => i.getAttribute('src'))
+  const pending = imgs
+    .filter((img) => !(img.complete && img.naturalWidth))
+    .map(
+      (img) =>
+        new Promise((res) => {
+          img.addEventListener('load', res, { once: true })
+          img.addEventListener('error', res, { once: true })
+        })
+    )
+  return Promise.all(pending)
+}
+
+async function finishLoading() {
+  const ready = (async () => {
+    if (document.fonts?.ready) await document.fonts.ready.catch(() => {})
+    await waitForImages()
+  })()
+  await Promise.race([ready, new Promise((r) => setTimeout(r, 7000))])
+  hidePreloader()
+}
+
+// Red de seguridad: nunca dejar la pantalla de carga trabada.
+setTimeout(hidePreloader, 10000)
+
+boot().catch(hidePreloader)
