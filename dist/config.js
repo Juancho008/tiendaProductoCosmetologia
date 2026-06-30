@@ -8,5 +8,7 @@
 //       apiBase: "https://elegance-estetica.TU-SUBDOMINIO.workers.dev"
 //     (sin barra final).
 window.ELEGANCE_CONFIG = {
-  apiBase: "https://elegance-estetica.juanignacioespindola08.workers.dev"
+  apiBase: "https://elegance-estetica.juanignacioespindola08.workers.dev",
+  // URL pública del sitio (canonical, Open Graph, sitemap). Dejar "" para usar el dominio actual.
+  siteUrl: "https://tienda-producto-cosmetologia.vercel.app"
 };

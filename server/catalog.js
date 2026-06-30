@@ -201,6 +201,8 @@ export function sanitizeCatalog(raw) {
     tagline: String(
       raw?.site?.tagline || raw?.store?.tagline || "Belleza Premium"
     ).trim(),
+    seoDescription: String(raw?.site?.seoDescription || "").trim().slice(0, 160),
+    seoKeywords: String(raw?.site?.seoKeywords || "").trim().slice(0, 200),
     whatsappNumber: String(
       raw?.site?.whatsappNumber || raw?.whatsappNumber || ""
     ).replace(/[^0-9]/g, ""),

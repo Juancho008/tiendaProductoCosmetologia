@@ -507,6 +507,17 @@ function siteSectionHTML() {
           <input type="text" value="${escapeHtml(site.whatsappNumber || '')}" data-site="whatsappNumber" placeholder="549...">
         </label>
       </div>
+      <div class="grid-2">
+        <label>Eslogan <span class="label-hint">(aparece en el título de Google)</span>
+          <input type="text" value="${escapeHtml(site.tagline || '')}" data-site="tagline" placeholder="Belleza Premium">
+        </label>
+        <label>Palabras clave SEO <span class="label-hint">(opcional, separadas por coma)</span>
+          <input type="text" value="${escapeHtml(site.seoKeywords || '')}" data-site="seoKeywords" placeholder="belleza, cosmética, maquillaje">
+        </label>
+      </div>
+      <label>Descripción SEO <span class="label-hint">(máx. 160 caracteres, para Google y redes)</span>
+        <textarea data-site="seoDescription" maxlength="160" placeholder="Breve descripción de la tienda para buscadores">${escapeHtml(site.seoDescription || '')}</textarea>
+      </label>
       <div class="hero-block">
         <div class="hero-block-head">
           <span class="hero-block-title">🖼️ Imágenes de portada</span>

@@ -5,8 +5,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beauty — Belleza Premium</title>
+    <meta name="description" content="Beauty: tienda online de productos de belleza, nutrición y cosmética premium. Cursos de capacitación y atención personalizada.">
+    <meta name="keywords" content="belleza, cosmética, maquillaje, skincare, nutrición, cursos de belleza, Beauty">
+    <meta name="author" content="Beauty">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#3a141c">
+    <link rel="canonical" href="https://tienda-producto-cosmetologia.vercel.app/">
     <link rel="icon" href="./img/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="./img/logo.png">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_AR">
+    <meta property="og:site_name" content="Beauty">
+    <meta property="og:title" content="Beauty — Belleza Premium">
+    <meta property="og:description" content="Tienda online de productos de belleza, nutrición y cosmética premium. Cursos y atención personalizada.">
+    <meta property="og:url" content="https://tienda-producto-cosmetologia.vercel.app/">
+    <meta property="og:image" content="https://tienda-producto-cosmetologia.vercel.app/img/logo.png">
+    <meta property="og:image:alt" content="Beauty — Belleza Premium">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Beauty — Belleza Premium">
+    <meta name="twitter:description" content="Tienda online de productos de belleza, nutrición y cosmética premium.">
+    <meta name="twitter:image" content="https://tienda-producto-cosmetologia.vercel.app/img/logo.png">
+    <script src="./config.js"></script>
+    <script>
+      (function () {
+        var cfg = window.ELEGANCE_CONFIG || {};
+        var base = String(cfg.siteUrl || location.origin).replace(/\/$/, '');
+        var url = base + '/';
+        var link = document.querySelector('link[rel="canonical"]');
+        if (link) link.href = url;
+        ['og:url', 'og:image', 'twitter:image'].forEach(function (key) {
+          var attr = key.indexOf('og:') === 0 ? 'property' : 'name';
+          var el = document.querySelector('meta[' + attr + '="' + key + '"]');
+          if (!el) return;
+          if (key === 'og:url') el.content = url;
+          if (key.indexOf('image') !== -1) el.content = base + '/img/logo.png';
+        });
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
@@ -14,10 +49,17 @@
   </head>
 
   <body>
+    <noscript>
+      <div style="padding:1.5rem;font-family:system-ui,sans-serif;line-height:1.6;text-align:center;background:#1c060b;color:#c9a962;">
+        <p><strong>Beauty — Belleza Premium</strong></p>
+        <p>Tienda de productos de belleza, nutrición y cosmética. Activá JavaScript para ver el catálogo, cursos y carrito.</p>
+      </div>
+    </noscript>
+
     <div class="preloader js-preloader" role="status" aria-label="Cargando">
       <div class="preloader__stain"></div>
       <div class="preloader__logo">
-        <img src="./img/logo.png" alt="Beauty Business">
+        <img src="./img/logo.png" alt="Beauty — Belleza Premium" width="512" height="512">
       </div>
     </div>
 
@@ -33,7 +75,8 @@
     </nav>
 
     <figure class="logo">
-      <img class="logo__img" src="./img/logo.png" alt="Beauty Business">
+      <h1 class="visually-hidden js-seo-title">Beauty — Belleza Premium</h1>
+      <img class="logo__img" src="./img/logo.png" alt="Beauty — Belleza Premium" width="512" height="512">
     </figure>
 
     <nav class="nav nav--right">
@@ -59,6 +102,7 @@
       </ul>
     </nav>
 
+    <main id="contenido-principal">
     <div class="slider js-slider">
       <div class="slider__inner js-slider__inner"></div>
 
@@ -178,6 +222,7 @@
         <div class="courses-grid js-store-courses"></div>
       </div>
     </section>
+    </main>
 
     <div class="cart-overlay js-cart-overlay" aria-hidden="true">
       <aside class="cart-panel js-cart-panel" role="dialog" aria-label="Carrito de compras">
@@ -216,7 +261,6 @@
       </div>
     </div>
 
-    <script src="./config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/99/three.min.js"></script>
     <script src="./script.js"></script>

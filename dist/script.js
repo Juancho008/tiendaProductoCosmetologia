@@ -1274,6 +1274,135 @@ function renderEmphasis(text) {
   return escapeHtml(text).replace(/\*([^*]+)\*/g, '<em>$1</em>')
 }
 
+function siteBaseUrl() {
+  const cfg = window.ELEGANCE_CONFIG || {}
+  const configured = String(cfg.siteUrl || '').trim().replace(/\/$/, '')
+  if (configured) return configured
+  return window.location.origin.replace(/\/$/, '')
+}
+
+function absoluteAssetUrl(path) {
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  return `${siteBaseUrl()}/${String(path).replace(/^\.\//, '')}`
+}
+
+function setMetaContent(selector, content) {
+  if (!content) return
+  const el = document.querySelector(selector)
+  if (!el) return
+  el.setAttribute('content', content)
+}
+
+function applySeo(catalog, products) {
+  const site = catalog?.site || {}
+  const storeName = site.storeName || 'Beauty'
+  const tagline = site.tagline || 'Belleza Premium'
+  const title = `${storeName} — ${tagline}`
+  const description =
+    site.seoDescription ||
+    `${storeName}: ${tagline}. Tienda online de productos de belleza, nutrición y cosmética premium. Cursos de capacitación y atención personalizada por WhatsApp.`
+  const url = `${siteBaseUrl()}/`
+  const image = absoluteAssetUrl('./img/logo.png')
+  const keywords =
+    site.seoKeywords ||
+    ['belleza', 'cosmética', 'maquillaje', 'skincare', 'nutrición', 'cursos de belleza', storeName].join(', ')
+
+  document.title = title
+  setMetaContent('meta[name="description"]', description)
+  setMetaContent('meta[name="keywords"]', keywords)
+  setMetaContent('meta[property="og:title"]', title)
+  setMetaContent('meta[property="og:description"]', description)
+  setMetaContent('meta[property="og:url"]', url)
+  setMetaContent('meta[property="og:image"]', image)
+  setMetaContent('meta[property="og:site_name"]', storeName)
+  setMetaContent('meta[name="twitter:title"]', title)
+  setMetaContent('meta[name="twitter:description"]', description)
+  setMetaContent('meta[name="twitter:image"]', image)
+
+  const canonical = document.querySelector('link[rel="canonical"]')
+  if (canonical) canonical.href = url
+
+  const h1 = document.querySelector('.js-seo-title')
+  if (h1) h1.textContent = title
+
+  const graph = [
+    {
+      '@type': 'Organization',
+      '@id': `${url}#organization`,
+      name: storeName,
+      url,
+      logo: image
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${url}#website`,
+      name: storeName,
+      url,
+      description,
+      publisher: { '@id': `${url}#organization` },
+      inLanguage: 'es-AR'
+    },
+    {
+      '@type': 'Store',
+      '@id': `${url}#store`,
+      name: storeName,
+      url,
+      description,
+      image
+    }
+  ]
+
+  const whatsapp = site.whatsappNumber
+  if (whatsapp) {
+    const phone = `+${whatsapp}`
+    graph[0].contactPoint = {
+      '@type': 'ContactPoint',
+      telephone: phone,
+      contactType: 'customer service',
+      availableLanguage: 'Spanish'
+    }
+    graph[2].telephone = phone
+  }
+
+  if (Array.isArray(products) && products.length) {
+    graph.push({
+      '@type': 'ItemList',
+      name: `Productos de ${storeName}`,
+      numberOfItems: products.length,
+      itemListElement: products.slice(0, 24).map((p, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Product',
+          name: p.name,
+          description: p.description || undefined,
+          image: p.image || undefined,
+          sku: p.code || p.id || undefined,
+          offers: {
+            '@type': 'Offer',
+            price: p.price,
+            priceCurrency: 'ARS',
+            availability:
+              p.available !== false
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock'
+          }
+        }
+      }))
+    })
+  }
+
+  let script = document.getElementById('seo-jsonld')
+  if (!script) {
+    script = document.createElement('script')
+    script.id = 'seo-jsonld'
+    script.type = 'application/ld+json'
+    document.head.appendChild(script)
+  }
+  script.textContent = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })
+}
+
 function applyHeroTexts(catalog) {
   const slides = catalog?.site?.slides
   if (Array.isArray(slides)) {
@@ -1440,6 +1569,7 @@ async function boot() {
 
   applyHeroImages(catalog)
   applyHeroTexts(catalog)
+  applySeo(catalog, allProducts)
 
   const track = document.querySelector('.js-carousel-track')
   renderProducts(track, allProducts)
