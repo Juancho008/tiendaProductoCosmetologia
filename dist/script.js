@@ -368,18 +368,34 @@ class Slider {
     loader.crossOrigin = 'anonymous'
 
     this.textures = []
+    const pending = []
     this.images.forEach((image, index) => {
-      const texture = loader.load(image + '?v=' + Date.now(), this.render)
-      texture.minFilter = THREE.LinearFilter
-      texture.generateMipmaps = false
-      if (index === 0 && this.mat) {
-        this.mat.uniforms.size.value = [
-          texture.image.naturalWidth,
-          texture.image.naturalHeight
-        ]
-      }
-      this.textures.push(texture)
+      let texture
+      pending.push(
+        new Promise((resolve) => {
+          texture = loader.load(
+            image + '?v=' + Date.now(),
+            () => {
+              this.render()
+              resolve()
+            },
+            undefined,
+            () => resolve()
+          )
+          texture.minFilter = THREE.LinearFilter
+          texture.generateMipmaps = false
+          if (index === 0 && this.mat) {
+            this.mat.uniforms.size.value = [
+              texture.image.naturalWidth,
+              texture.image.naturalHeight
+            ]
+          }
+          this.textures.push(texture)
+        })
+      )
     })
+
+    this.texturesReady = Promise.all(pending)
 
     this.disp = loader.load('https://s3-us-west-2.amazonaws.com/s.cdpn.io/58281/rock-_disp.png', this.render)
     this.disp.magFilter = this.disp.minFilter = THREE.LinearFilter
@@ -1482,7 +1498,7 @@ async function boot() {
 
   window.__elegance = { cart, slider, productCarousel, quickView, applyFilter }
 
-  await finishLoading()
+  await finishLoading(slider)
 }
 
 function hidePreloader() {
@@ -1507,12 +1523,15 @@ function waitForImages() {
   return Promise.all(pending)
 }
 
-async function finishLoading() {
+async function finishLoading(slider) {
   const ready = (async () => {
     if (document.fonts?.ready) await document.fonts.ready.catch(() => {})
-    await waitForImages()
+    await Promise.all([
+      waitForImages(),
+      slider?.texturesReady?.catch(() => {}) || Promise.resolve()
+    ])
   })()
-  await Promise.race([ready, new Promise((r) => setTimeout(r, 7000))])
+  await Promise.race([ready, new Promise((r) => setTimeout(r, 9000))])
   hidePreloader()
 }
 
